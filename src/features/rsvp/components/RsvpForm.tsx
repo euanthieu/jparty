@@ -193,7 +193,7 @@ export function RsvpForm() {
           id="rsvp-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Juan Dela Cruz"
+          placeholder="Justin Vallejo"
           autoComplete="name"
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? "rsvp-name-error" : undefined}
@@ -213,7 +213,7 @@ export function RsvpForm() {
           id="rsvp-contact"
           value={contact}
           onChange={(e) => setContact(e.target.value)}
-          placeholder="@juan.dc or 0917 123 4567"
+          placeholder={`@${EVENT.hostInstagram}`}
           aria-invalid={Boolean(errors.contact)}
           aria-describedby={errors.contact ? "rsvp-contact-error" : undefined}
           className={fieldClass}
