@@ -43,75 +43,82 @@ export function RsvpPage() {
       <div className="jp-card grid w-full max-w-6xl gap-2 rounded-2xl p-2 md:grid-cols-[1.05fr_1fr] md:p-3">
         <PhotoPanel />
 
-        <section className="flex flex-col justify-center px-3 py-8 sm:px-6 md:px-10 md:py-12 lg:px-14">
-          <p className="font-[family-name:var(--font-lora)] text-lg text-[var(--jp-text)]">
-            {EVENT.name}
-          </p>
+        {/*
+          On desktop the square photo alone sets the card's height; the form
+          is taken out of flow and scrolls inside its column, so there's no
+          empty space under the picture.
+        */}
+        <div className="relative">
+          <section className="jp-scroll flex flex-col px-3 py-8 sm:px-6 md:absolute md:inset-0 md:overflow-y-auto md:px-10 md:py-10 lg:px-14">
+            <p className="font-[family-name:var(--font-lora)] text-lg text-[var(--jp-text)]">
+              {EVENT.name}
+            </p>
 
-          <h1 className="mt-8 font-[family-name:var(--font-lora)] text-[2.6rem] leading-[1.05] tracking-tight text-[var(--jp-text)] md:mt-12 md:text-6xl">
-            Save{" "}
-            <span className="relative inline-block whitespace-nowrap">
-              Your Spot.
-              <BrushUnderline />
-            </span>
-          </h1>
+            <h1 className="mt-8 font-[family-name:var(--font-lora)] text-[2.6rem] leading-[1.05] tracking-tight text-[var(--jp-text)] md:mt-12 md:text-6xl">
+              Save{" "}
+              <span className="relative inline-block whitespace-nowrap">
+                Your Spot.
+                <BrushUnderline />
+              </span>
+            </h1>
 
-          <p className="mt-6 max-w-md text-sm leading-relaxed text-[var(--jp-muted)]">
-            One night at {EVENT.venue}. Food and drinks are on {EVENT.host};{" "}
-            <span className="font-semibold text-[var(--jp-text)]">
-              you pay your own entrance fee.
-            </span>{" "}
-            Bring up to {EVENT.maxPlusOnes} friends, pick your night, and the
-            majority wins. Only {EVENT.capacity} pax, so sign up before it
-            closes.
-          </p>
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-[var(--jp-muted)]">
+              One night at {EVENT.venue}. Food and drinks are on {EVENT.host};{" "}
+              <span className="font-semibold text-[var(--jp-text)]">
+                you pay your own entrance fee.
+              </span>{" "}
+              Bring up to {EVENT.maxPlusOnes} friends, pick your night, and the
+              majority wins. Only {EVENT.capacity} pax, so sign up before it
+              closes.
+            </p>
 
-          <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-3 border-y border-[var(--jp-border)] py-5 sm:grid-cols-3">
-            {DETAILS.map((d) =>
-              "highlight" in d ? (
-                <div
-                  key={d.label}
-                  className="-mx-2 -my-1 rounded-md bg-[rgb(var(--jp-accent-rgb)/0.15)] px-2 py-1 ring-1 ring-[rgb(var(--jp-accent-rgb)/0.5)]"
-                >
-                  <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--jp-accent-soft)]">
-                    {d.label}
-                  </dt>
-                  <dd className="mt-0.5 text-sm font-semibold text-[var(--jp-text)]">
-                    {d.value}
-                  </dd>
-                </div>
-              ) : (
-                <div key={d.label}>
-                  <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--jp-faint)]">
-                    {d.label}
-                  </dt>
-                  <dd className="mt-0.5 text-sm text-[var(--jp-text)]">
-                    {d.value}
-                  </dd>
-                </div>
-              ),
-            )}
-          </dl>
+            <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-3 border-y border-[var(--jp-border)] py-5 sm:grid-cols-3">
+              {DETAILS.map((d) =>
+                "highlight" in d ? (
+                  <div
+                    key={d.label}
+                    className="-mx-2 -my-1 rounded-md bg-[rgb(var(--jp-accent-rgb)/0.15)] px-2 py-1 ring-1 ring-[rgb(var(--jp-accent-rgb)/0.5)]"
+                  >
+                    <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--jp-accent-soft)]">
+                      {d.label}
+                    </dt>
+                    <dd className="mt-0.5 text-sm font-semibold text-[var(--jp-text)]">
+                      {d.value}
+                    </dd>
+                  </div>
+                ) : (
+                  <div key={d.label}>
+                    <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--jp-faint)]">
+                      {d.label}
+                    </dt>
+                    <dd className="mt-0.5 text-sm text-[var(--jp-text)]">
+                      {d.value}
+                    </dd>
+                  </div>
+                ),
+              )}
+            </dl>
 
-          <div className="mt-7">
-            <RsvpForm />
-          </div>
+            <div className="mt-7">
+              <RsvpForm />
+            </div>
 
-          <GuestList />
+            <GuestList />
 
-          <p className="mt-6 text-xs text-[var(--jp-faint)]">
-            Questions? DM{" "}
-            <a
-              href={`https://instagram.com/${EVENT.hostInstagram}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[var(--jp-muted)] underline underline-offset-4 hover:text-[var(--jp-text)]"
-            >
-              @{EVENT.hostInstagram}
-            </a>{" "}
-            on Instagram.
-          </p>
-        </section>
+            <p className="mt-6 text-xs text-[var(--jp-faint)]">
+              Questions? DM{" "}
+              <a
+                href={`https://instagram.com/${EVENT.hostInstagram}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--jp-muted)] underline underline-offset-4 hover:text-[var(--jp-text)]"
+              >
+                @{EVENT.hostInstagram}
+              </a>{" "}
+              on Instagram.
+            </p>
+          </section>
+        </div>
       </div>
     </main>
   );

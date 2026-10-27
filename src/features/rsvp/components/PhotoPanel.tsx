@@ -24,9 +24,8 @@ export function PhotoPanel() {
 
   return (
     // Square to match the 1440px square photos: a taller frame crops and
-    // upscales them, which is what made them look soft. On desktop it stays
-    // in view while the form scrolls past.
-    <div className="relative aspect-square overflow-hidden rounded-xl bg-[var(--jp-field)] md:sticky md:top-3 md:self-start">
+    // upscales them, which is what made them look soft.
+    <div className="relative aspect-square overflow-hidden rounded-xl bg-[var(--jp-field)]">
       <AnimatePresence initial={false}>
         <motion.div
           key={photo.src}

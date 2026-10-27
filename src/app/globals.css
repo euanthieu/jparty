@@ -177,6 +177,11 @@
     0 30px 80px -20px rgba(0, 0, 0, 0.8);
 }
 
+.jp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--jp-border) transparent;
+}
+
 .jp-page ::selection {
   background: var(--jp-accent);
   color: #fff;
