@@ -313,10 +313,13 @@ export function RsvpForm() {
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--jp-accent)]"
           />
           <span className="text-xs leading-relaxed text-[var(--jp-muted)]">
-            <span className="block text-sm font-semibold text-[var(--jp-text)]">
-              I&rsquo;ll pay the entrance fee ({EVENT.entranceFee}).
+            <span className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--jp-accent-soft)]">
+              Entrance fee &middot; paid by you
             </span>
-            Food and drinks are covered by {EVENT.host}.
+            <span className="block text-sm font-semibold text-[var(--jp-text)]">
+              I agree to pay my own entrance fee ({EVENT.entranceFee}).
+            </span>
+            {EVENT.host} only covers food and drinks.
           </span>
         </label>
         <FieldError id="rsvp-fee-error" message={errors.agreedToFee} />

@@ -23,7 +23,10 @@ export function PhotoPanel() {
   const photo = PARTY_PHOTOS[index];
 
   return (
-    <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[var(--jp-field)] md:aspect-auto md:min-h-[640px]">
+    // Square to match the 1440px square photos: a taller frame crops and
+    // upscales them, which is what made them look soft. On desktop it stays
+    // in view while the form scrolls past.
+    <div className="relative aspect-square overflow-hidden rounded-xl bg-[var(--jp-field)] md:sticky md:top-3 md:self-start">
       <AnimatePresence initial={false}>
         <motion.div
           key={photo.src}
@@ -38,7 +41,8 @@ export function PhotoPanel() {
             alt={photo.alt}
             fill
             priority={index === 0}
-            sizes="(min-width: 768px) 50vw, 100vw"
+            sizes="(min-width: 1152px) 600px, (min-width: 768px) 52vw, 100vw"
+            quality={90}
             className="object-cover"
           />
         </motion.div>

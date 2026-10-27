@@ -22,7 +22,9 @@ export const RsvpSchema = z.object({
     .int()
     .min(0)
     .max(EVENT.maxPlusOnes, `You can bring up to ${EVENT.maxPlusOnes}.`),
-  agreedToFee: z.literal(true, { error: "Please confirm the entrance fee." }),
+  agreedToFee: z.literal(true, {
+    error: "Please confirm you'll pay your entrance fee.",
+  }),
 });
 
 export type RsvpInput = z.infer<typeof RsvpSchema>;
