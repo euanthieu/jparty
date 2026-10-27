@@ -120,8 +120,9 @@ export function RsvpForm() {
             </p>
             <p className="mt-3 text-sm leading-relaxed text-[var(--jp-muted)]">
               {held === 1 ? "Your spot is" : `${held} spots are`} held for{" "}
-              {EVENT.night.label} at {EVENT.venue}, {EVENT.city} in{" "}
-              {EVENT.month}. The exact date and curfew will be announced soon.
+              {EVENT.night.label} at {EVENT.venue}, {EVENT.city} (
+              {EVENT.dateOptions}). The final date and curfew will be announced
+              soon.
             </p>
           </>
         ) : (

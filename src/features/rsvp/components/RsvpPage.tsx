@@ -5,7 +5,7 @@ import { GuestList } from "@/features/rsvp/components/GuestList";
 
 const DETAILS = [
   { label: "Venue", value: `${EVENT.venue}, ${EVENT.city}` },
-  { label: "When", value: `A ${EVENT.night.label}, Jan 2027` },
+  { label: "When", value: `Fri, ${EVENT.dateOptions}` },
   {
     label: "Entrance fee",
     value: `${EVENT.entranceFee} · you pay`,
@@ -68,7 +68,8 @@ export function RsvpPage() {
 
             <p className="mt-6 max-w-md text-sm leading-relaxed text-[var(--jp-muted)]">
               A private {EVENT.night.label} night at {EVENT.venue}, {EVENT.city}{" "}
-              this {EVENT.month}. Food and drinks are on {EVENT.host};{" "}
+              this {EVENT.month} ({EVENT.dateOptions}). Food and drinks are on{" "}
+              {EVENT.host};{" "}
               <span className="font-semibold text-[var(--jp-text)]">
                 you pay your own entrance fee.
               </span>{" "}

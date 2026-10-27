@@ -8,8 +8,9 @@ export const EVENT = {
   hostInstagram: "djstnn_",
   venue: "Karma",
   city: "Baguio",
-  /** Exact Friday not announced yet. */
   month: "January 2027",
+  /** Both Fridays; Justin hasn't picked between them yet. */
+  dateOptions: "Jan 8 or 15",
   venueInstagram: "karma_bydrunkenchef",
   /** Headcount, plus-ones included. RSVPs past this land on the waitlist. */
   capacity: 40,
