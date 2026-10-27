@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EVENT } from "@/features/rsvp/data/event";
 import {
   RsvpSchema,
-  type NightId,
   type RsvpInput,
   type RsvpResult,
 } from "@/features/rsvp/contracts/rsvp.contract";
@@ -62,7 +61,6 @@ export function RsvpForm() {
 
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [night, setNight] = useState<NightId | "">("");
   const [plusOnes, setPlusOnes] = useState(0);
   const [agreedToFee, setAgreedToFee] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -82,7 +80,7 @@ export function RsvpForm() {
     const parsed = RsvpSchema.safeParse({
       name,
       contact,
-      night: night || undefined,
+      night: EVENT.night.id,
       plusOnes,
       agreedToFee,
     });
@@ -101,7 +99,6 @@ export function RsvpForm() {
 
   if (mutation.isSuccess) {
     const { outcome, heads: held } = mutation.data;
-    const nightLabel = EVENT.nights.find((n) => n.id === night)?.label;
     const firstName = name.trim().split(/\s+/)[0];
     return (
       <div
@@ -114,9 +111,9 @@ export function RsvpForm() {
               You&rsquo;re in, {firstName}.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-[var(--jp-muted)]">
-              {held === 1 ? "Your spot is" : `${held} spots are`} held. Your
-              vote for {nightLabel} is counted. The final night and curfew will
-              be announced once the votes are in.
+              {held === 1 ? "Your spot is" : `${held} spots are`} held for{" "}
+              {EVENT.night.label} at {EVENT.venue}. The curfew will be announced
+              soon.
             </p>
           </>
         ) : (
@@ -125,8 +122,8 @@ export function RsvpForm() {
               You&rsquo;re on the waitlist.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-[var(--jp-muted)]">
-              The list hit {EVENT.capacity}, but your vote for {nightLabel}{" "}
-              still counts. DM <IgLink /> on Instagram if a spot opens up.
+              The list hit {EVENT.capacity} pax. DM <IgLink /> on Instagram if a
+              spot opens up.
             </p>
           </>
         )}
@@ -165,8 +162,7 @@ export function RsvpForm() {
           <span className="font-semibold">
             Sign-ups are closed: we&rsquo;ve hit {EVENT.capacity} pax.
           </span>{" "}
-          You can still vote for the night and join the waitlist, or DM{" "}
-          <IgLink />.
+          You can still join the waitlist, or DM <IgLink />.
         </p>
       ) : (
         <p className="text-xs leading-relaxed text-[var(--jp-muted)]">
@@ -215,48 +211,6 @@ export function RsvpForm() {
         />
         <FieldError id="rsvp-contact-error" message={errors.contact} />
       </div>
-
-      <fieldset
-        aria-describedby={errors.night ? "rsvp-night-error" : undefined}
-      >
-        <legend className="mb-1.5 text-xs text-[var(--jp-muted)]">
-          Which night works for you?
-        </legend>
-        <div className="grid grid-cols-2 gap-2">
-          {EVENT.nights.map((n) => {
-            const selected = night === n.id;
-            const votes = status?.votes[n.id];
-            return (
-              <label
-                key={n.id}
-                className={`flex cursor-pointer items-center justify-between rounded-md border px-3.5 py-3 text-sm transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-white/30 ${
-                  selected
-                    ? "border-[var(--jp-text)] bg-[var(--jp-text)] text-[var(--jp-bg)]"
-                    : "border-[var(--jp-border)] bg-[var(--jp-field)] text-[var(--jp-text)] hover:border-[rgb(var(--jp-text-rgb)/0.4)]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="night"
-                  value={n.id}
-                  checked={selected}
-                  onChange={() => setNight(n.id)}
-                  className="sr-only"
-                />
-                <span className="font-medium">{n.label}</span>
-                {votes !== undefined && (
-                  <span
-                    className={`text-xs ${selected ? "opacity-70" : "text-[var(--jp-muted)]"}`}
-                  >
-                    {votes} {votes === 1 ? "vote" : "votes"}
-                  </span>
-                )}
-              </label>
-            );
-          })}
-        </div>
-        <FieldError id="rsvp-night-error" message={errors.night} />
-      </fieldset>
 
       <fieldset>
         <legend className="mb-1.5 text-xs text-[var(--jp-muted)]">

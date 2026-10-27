@@ -1,12 +1,7 @@
 "use client";
 
-import { EVENT } from "@/features/rsvp/data/event";
 import type { GuestEntry } from "@/features/rsvp/contracts/rsvp.contract";
 import { useRsvpStatus } from "@/features/rsvp/hooks/useRsvpStatus";
-
-const NIGHT_SHORT: Record<string, string> = Object.fromEntries(
-  EVENT.nights.map((n) => [n.id, n.label.slice(0, 3)]),
-);
 
 function GuestChip({ guest }: { guest: GuestEntry }) {
   return (
@@ -21,11 +16,6 @@ function GuestChip({ guest }: { guest: GuestEntry }) {
       {guest.plusOnes > 0 && (
         <span className="rounded-full bg-white/10 px-1.5 py-px text-[0.65rem] font-semibold">
           +{guest.plusOnes}
-        </span>
-      )}
-      {guest.night && (
-        <span className="text-[0.65rem] text-[var(--jp-faint)]">
-          {NIGHT_SHORT[guest.night]}
         </span>
       )}
     </li>

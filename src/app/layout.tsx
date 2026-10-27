@@ -59,14 +59,14 @@ export const metadata: Metadata = {
     default: "JParty | RSVP",
   },
   description:
-    "One night at Karma. Pick your night, bring up to 3 friends, and save your spot.",
+    "Friday night at Karma. Bring up to 3 friends and save your spot.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://next-template.dev",
   ),
   openGraph: {
     title: "JParty | RSVP",
     description:
-      "One night at Karma. Pick your night, bring up to 3 friends, and save your spot.",
+      "Friday night at Karma. Bring up to 3 friends and save your spot.",
     url: "https://next-template.dev",
     siteName: "JParty",
     images: [
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "JParty | RSVP",
     description:
-      "One night at Karma. Pick your night, bring up to 3 friends, and save your spot.",
+      "Friday night at Karma. Bring up to 3 friends and save your spot.",
     images: ["/party/dj-booth.webp"],
   },
   icons: {

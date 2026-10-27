@@ -5,7 +5,7 @@ import { GuestList } from "@/features/rsvp/components/GuestList";
 
 const DETAILS = [
   { label: "Venue", value: EVENT.venue },
-  { label: "Night (vote)", value: "Thu or Fri" },
+  { label: "Night", value: EVENT.night.label },
   {
     label: "Entrance fee",
     value: `${EVENT.entranceFee} · you pay`,
@@ -63,13 +63,13 @@ export function RsvpPage() {
             </h1>
 
             <p className="mt-6 max-w-md text-sm leading-relaxed text-[var(--jp-muted)]">
-              One night at {EVENT.venue}. Food and drinks are on {EVENT.host};{" "}
+              One {EVENT.night.label} night at {EVENT.venue}. Food and drinks
+              are on {EVENT.host};{" "}
               <span className="font-semibold text-[var(--jp-text)]">
                 you pay your own entrance fee.
               </span>{" "}
-              Bring up to {EVENT.maxPlusOnes} friends, pick your night, and the
-              majority wins. Only {EVENT.capacity} pax, so sign up before it
-              closes.
+              Bring up to {EVENT.maxPlusOnes} friends. Only {EVENT.capacity}{" "}
+              pax, so sign up before it closes.
             </p>
 
             <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-3 border-y border-[var(--jp-border)] py-5 sm:grid-cols-3">

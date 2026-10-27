@@ -1,6 +1,6 @@
 /**
  * Everything guests read about the night lives here, so details that are
- * still undecided (fee, curfew, the winning night) change in one place.
+ * still undecided (fee, curfew) change in one place.
  */
 export const EVENT = {
   name: "JParty",
@@ -13,10 +13,8 @@ export const EVENT = {
   maxPlusOnes: 3,
   entranceFee: "TBA",
   curfew: "Pending",
-  nights: [
-    { id: "thursday", label: "Thursday" },
-    { id: "friday", label: "Friday" },
-  ],
+  /** Decided: Friday. Sent with every RSVP so the sheet's Night column stays filled. */
+  night: { id: "friday", label: "Friday" },
 } as const;
 
 export const PARTY_PHOTOS = [
