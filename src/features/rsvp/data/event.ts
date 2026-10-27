@@ -16,7 +16,7 @@ export const EVENT = {
   maxPlusOnes: 3,
   entranceFee: "TBA",
   curfew: "Pending",
-  /** Decided: Friday. Sent with every RSVP so the sheet's Night column stays filled. */
+  /** Booked: Friday. Guests still say which night they'd prefer, for Justin's info. */
   night: { id: "friday", label: "Friday" },
 } as const;
 

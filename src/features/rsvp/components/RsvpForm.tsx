@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EVENT } from "@/features/rsvp/data/event";
 import {
   RsvpSchema,
+  type NightId,
   type RsvpInput,
   type RsvpResult,
 } from "@/features/rsvp/contracts/rsvp.contract";
@@ -14,6 +15,12 @@ import {
 } from "@/features/rsvp/hooks/useRsvpStatus";
 
 const IG_URL = `https://instagram.com/${EVENT.hostInstagram}`;
+
+/** Friday is booked; this only tells Justin which night guests would have picked. */
+const NIGHT_OPTIONS: { id: NightId; label: string }[] = [
+  { id: "thursday", label: "Thursday" },
+  { id: "friday", label: "Friday" },
+];
 
 type FieldErrors = Partial<Record<keyof RsvpInput, string>>;
 
@@ -62,6 +69,7 @@ export function RsvpForm() {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [plusOnes, setPlusOnes] = useState(0);
+  const [night, setNight] = useState<NightId | null>(null);
   const [agreedToFee, setAgreedToFee] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -80,7 +88,7 @@ export function RsvpForm() {
     const parsed = RsvpSchema.safeParse({
       name,
       contact,
-      night: EVENT.night.id,
+      night: night ?? undefined,
       plusOnes,
       agreedToFee,
     });
@@ -248,6 +256,44 @@ export function RsvpForm() {
             {heads} will go to the waitlist.
           </p>
         )}
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-1.5 text-xs text-[var(--jp-muted)]">
+          {EVENT.night.label} is the plan, but which night would you have
+          preferred?
+        </legend>
+        <div className="grid grid-cols-2 gap-2">
+          {NIGHT_OPTIONS.map((option) => {
+            const selected = night === option.id;
+            return (
+              <label
+                key={option.id}
+                className={`cursor-pointer rounded-md border py-2.5 text-center text-sm transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-white/30 ${
+                  selected
+                    ? "border-[var(--jp-text)] bg-[var(--jp-text)] text-[var(--jp-bg)]"
+                    : "border-[var(--jp-border)] bg-[var(--jp-field)] text-[var(--jp-text)] hover:border-[rgb(var(--jp-text-rgb)/0.4)]"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="night"
+                  value={option.id}
+                  checked={selected}
+                  onChange={() => setNight(option.id)}
+                  className="sr-only"
+                />
+                {option.label}
+                {status && (
+                  <span className="ml-1.5 text-xs opacity-60">
+                    {status.votes[option.id]}
+                  </span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+        <FieldError id="rsvp-night-error" message={errors.night} />
       </fieldset>
 
       <div>
