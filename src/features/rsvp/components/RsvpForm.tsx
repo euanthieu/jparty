@@ -38,7 +38,7 @@ async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
 }
 
 const fieldClass =
-  "w-full rounded-md border border-[var(--jp-border)] bg-[var(--jp-field)] px-3.5 py-3 text-sm text-[var(--jp-text)] placeholder:text-[var(--jp-faint)] outline-none transition focus:border-[rgb(var(--jp-text-rgb)/0.6)] focus:ring-2 focus:ring-white/10 aria-[invalid=true]:border-[var(--jp-accent)]";
+  "w-full rounded-md border border-[var(--jp-border)] bg-[var(--jp-field)] px-3.5 py-3 text-base text-[var(--jp-text)] placeholder:text-[var(--jp-faint)] outline-none transition focus:border-[rgb(var(--jp-text-rgb)/0.6)] focus:ring-2 focus:ring-white/10 aria-[invalid=true]:border-[var(--jp-accent)]";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
