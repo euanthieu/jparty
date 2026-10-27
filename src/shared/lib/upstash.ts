@@ -19,16 +19,29 @@ export class UpstashNotConfiguredError extends Error {
   }
 }
 
+/**
+ * A database connected through the Vercel Marketplace may expose its REST
+ * credentials as KV_REST_API_*, so accept either naming.
+ */
+function credentials() {
+  return {
+    url: read("UPSTASH_REDIS_REST_URL") ?? read("KV_REST_API_URL"),
+    token: read("UPSTASH_REDIS_REST_TOKEN") ?? read("KV_REST_API_TOKEN"),
+  };
+}
+
 /** Names of the vars that are absent or blank. Empty array means the credentials are present. */
 export function missingUpstashVars(): string[] {
-  return ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"].filter(
-    (name) => !read(name),
-  );
+  const { url, token } = credentials();
+  return [
+    url ? null : "UPSTASH_REDIS_REST_URL",
+    token ? null : "UPSTASH_REDIS_REST_TOKEN",
+  ].filter((name): name is string => name !== null);
 }
 
 /**
  * Lazily constructed so a missing config doesn't crash the whole app at
- * import time — only requests that actually need order storage fail.
+ * import time — only requests that actually need storage fail.
  */
 export function getRedis(): Redis {
   if (client) return client;
@@ -38,9 +51,7 @@ export function getRedis(): Redis {
     throw new UpstashNotConfiguredError(missing);
   }
 
-  client = new Redis({
-    url: read("UPSTASH_REDIS_REST_URL") as string,
-    token: read("UPSTASH_REDIS_REST_TOKEN") as string,
-  });
+  const { url, token } = credentials();
+  client = new Redis({ url: url as string, token: token as string });
   return client;
 }
