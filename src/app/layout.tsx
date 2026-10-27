@@ -5,6 +5,8 @@ import {
   Poppins,
   Oswald,
   JetBrains_Mono,
+  Inter,
+  Lora,
 } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/shared/lib/providers/query-provider";
@@ -40,25 +42,38 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   title: {
-    template: "%s | IGNYT CITY",
-    default: "IGNYT CITY | Pre-Order Merch",
+    template: "%s | JParty",
+    default: "JParty | RSVP",
   },
-  description: "IGNYT CITY pre-order merch drop. Where darkness has to end.",
+  description:
+    "One night at Karma. Pick your night, bring up to 3 friends, and save your spot.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://next-template.dev",
   ),
   openGraph: {
-    title: "IGNYT CITY | Pre-Order Merch",
-    description: "IGNYT CITY pre-order merch drop. Where darkness has to end.",
+    title: "JParty | RSVP",
+    description:
+      "One night at Karma. Pick your night, bring up to 3 friends, and save your spot.",
     url: "https://next-template.dev",
-    siteName: "IGNYT CITY",
+    siteName: "JParty",
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        url: "/party/dj-booth.jpg",
+        width: 2000,
+        height: 2000,
       },
     ],
     locale: "en_US",
@@ -66,9 +81,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "IGNYT CITY | Pre-Order Merch",
-    description: "IGNYT CITY pre-order merch drop. Where darkness has to end.",
-    images: ["/og-image.png"],
+    title: "JParty | RSVP",
+    description:
+      "One night at Karma. Pick your night, bring up to 3 friends, and save your spot.",
+    images: ["/party/dj-booth.jpg"],
   },
   icons: {
     icon: "/favicon.ico",
@@ -84,7 +100,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} ${oswald.variable} ${jetbrainsMono.variable} font-[family-name:var(--font-poppins)] antialiased bg-background-primary text-text-primary min-h-screen flex flex-col`}
+        className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} ${oswald.variable} ${jetbrainsMono.variable} ${inter.variable} ${lora.variable} font-[family-name:var(--font-poppins)] antialiased bg-background-primary text-text-primary min-h-screen flex flex-col`}
       >
         <ThemeProvider
           attribute="class"

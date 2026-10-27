@@ -140,67 +140,40 @@
 }
 
 /* ==========================================================================
-   IGNYT CITY storefront — ALIGNE-derived editorial design tokens.
-   Scoped to .ic-store so the rest of the app (dashboard/admin) is untouched.
+   JParty RSVP page — dark editorial tokens, independent of the app theme.
    ========================================================================== */
-.ic-store {
-  --ic-charcoal: #24170f;
-  --ic-black: #151515;
-  --ic-white: #ffffff;
-  --ic-ash: #ececec;
-  --ic-signal: #0073ff;
-  --ic-flame: #e0301e;
+.jp-page {
+  --jp-bg: #070708;
+  --jp-card: #0e0e10;
+  --jp-field: #1b1b1e;
+  --jp-border: #2a2a2e;
+  --jp-text: #f4f1ec;
+  --jp-muted: #a19d96;
+  --jp-faint: #6f6c67;
+  --jp-accent: #c9251b;
+  --jp-accent-soft: #f0776e;
 
-  --font-mono:
-    var(--font-jetbrains-mono), "GT America Mono", ui-monospace, SFMono-Regular,
-    Menlo, Monaco, Consolas, monospace;
-  --font-display:
-    var(--font-oswald), "Nimbus Sans Extended", ui-sans-serif, system-ui,
-    sans-serif;
-
-  background: #ffffff;
-  color: #151515;
-  font-family: var(--font-mono);
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+  background:
+    radial-gradient(ellipse at 20% 0%, #1d1a17 0%, transparent 60%),
+    var(--jp-bg);
+  color: var(--jp-text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
 }
 
-.dark .ic-store {
-  background: #14100d;
-  color: #f5f2ee;
+.jp-card {
+  background: linear-gradient(
+    135deg,
+    #141416 0%,
+    var(--jp-card) 45%,
+    #050506 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 30px 80px -20px rgba(0, 0, 0, 0.8);
 }
 
-.ic-store * {
-  border-radius: 0 !important;
-}
-
-.ic-store .ic-display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.ic-store .ic-mono {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.ic-store ::selection {
-  background: var(--ic-flame);
-  color: var(--ic-white);
-}
-
-@keyframes ic-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.ic-marquee-track {
-  animation: ic-marquee 22s linear infinite;
+.jp-page ::selection {
+  background: var(--jp-accent);
+  color: #fff;
 }

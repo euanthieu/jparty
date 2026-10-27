@@ -22,8 +22,10 @@ export default function QueryProvider({
     () =>
       new QueryClient({
         queryCache: new QueryCache({
-          onError: (error) => {
+          onError: (error, query) => {
             logError(error);
+            // Callers that render their own error UI opt out of the toast.
+            if (query.meta?.silent) return;
             const result = routeError(error);
 
             if (result.toast) {
@@ -38,8 +40,9 @@ export default function QueryProvider({
           },
         }),
         mutationCache: new MutationCache({
-          onError: (error) => {
+          onError: (error, _variables, _context, mutation) => {
             logError(error);
+            if (mutation.meta?.silent) return;
             const result = routeError(error);
 
             if (result.toast) {
