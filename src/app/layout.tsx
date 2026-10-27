@@ -59,14 +59,14 @@ export const metadata: Metadata = {
     default: "JParty | RSVP",
   },
   description:
-    "Friday night at Karma. Bring up to 3 friends and save your spot.",
+    "A private Friday night at Karma, Baguio this January 2027. If you're seeing this, you're invited.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://next-template.dev",
   ),
   openGraph: {
     title: "JParty | RSVP",
     description:
-      "Friday night at Karma. Bring up to 3 friends and save your spot.",
+      "A private Friday night at Karma, Baguio this January 2027. If you're seeing this, you're invited.",
     url: "https://next-template.dev",
     siteName: "JParty",
     images: [
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "JParty | RSVP",
     description:
-      "Friday night at Karma. Bring up to 3 friends and save your spot.",
+      "A private Friday night at Karma, Baguio this January 2027. If you're seeing this, you're invited.",
     images: ["/party/dj-booth.webp"],
   },
   icons: {

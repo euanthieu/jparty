@@ -4,8 +4,8 @@ import { RsvpForm } from "@/features/rsvp/components/RsvpForm";
 import { GuestList } from "@/features/rsvp/components/GuestList";
 
 const DETAILS = [
-  { label: "Venue", value: EVENT.venue },
-  { label: "Night", value: EVENT.night.label },
+  { label: "Venue", value: `${EVENT.venue}, ${EVENT.city}` },
+  { label: "When", value: `A ${EVENT.night.label}, Jan 2027` },
   {
     label: "Entrance fee",
     value: `${EVENT.entranceFee} · you pay`,
@@ -54,7 +54,11 @@ export function RsvpPage() {
               {EVENT.name}
             </p>
 
-            <h1 className="mt-8 font-[family-name:var(--font-lora)] text-[2.6rem] leading-[1.05] tracking-tight text-[var(--jp-text)] md:mt-12 md:text-6xl">
+            <p className="mt-8 self-start rounded-full border border-[rgb(var(--jp-accent-rgb)/0.5)] bg-[rgb(var(--jp-accent-rgb)/0.12)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--jp-accent-soft)] md:mt-10">
+              If you&rsquo;re seeing this, you&rsquo;re invited
+            </p>
+
+            <h1 className="mt-5 font-[family-name:var(--font-lora)] text-[2.6rem] leading-[1.05] tracking-tight text-[var(--jp-text)] md:mt-6 md:text-6xl">
               Save{" "}
               <span className="relative inline-block whitespace-nowrap">
                 Your Spot.
@@ -63,8 +67,8 @@ export function RsvpPage() {
             </h1>
 
             <p className="mt-6 max-w-md text-sm leading-relaxed text-[var(--jp-muted)]">
-              One {EVENT.night.label} night at {EVENT.venue}. Food and drinks
-              are on {EVENT.host};{" "}
+              A private {EVENT.night.label} night at {EVENT.venue}, {EVENT.city}{" "}
+              this {EVENT.month}. Food and drinks are on {EVENT.host};{" "}
               <span className="font-semibold text-[var(--jp-text)]">
                 you pay your own entrance fee.
               </span>{" "}
@@ -98,6 +102,14 @@ export function RsvpPage() {
                 ),
               )}
             </dl>
+
+            <p className="mt-4 text-xs leading-relaxed text-[var(--jp-muted)]">
+              <span className="font-semibold text-[var(--jp-text)]">
+                Why Friday?
+              </span>{" "}
+              It costs a bit more than the Thursday Karma first offered, but
+              nobody has to wake up early for work or school the next day.
+            </p>
 
             <div className="mt-7">
               <RsvpForm />
