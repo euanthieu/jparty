@@ -17,9 +17,9 @@ import {
 const IG_URL = `https://instagram.com/${EVENT.hostInstagram}`;
 
 /** Friday is booked; this only tells Justin which night guests would have picked. */
-const NIGHT_OPTIONS: { id: NightId; label: string }[] = [
-  { id: "thursday", label: "Thursday" },
-  { id: "friday", label: "Friday" },
+const NIGHT_OPTIONS: { id: NightId; label: string; dates: string }[] = [
+  { id: "thursday", label: "Thursday", dates: "Jan 7 or 14" },
+  { id: "friday", label: "Friday", dates: EVENT.dateOptions },
 ];
 
 type FieldErrors = Partial<Record<keyof RsvpInput, string>>;
@@ -290,6 +290,7 @@ export function RsvpForm() {
                     {status.votes[option.id]}
                   </span>
                 )}
+                <span className="block text-xs opacity-60">{option.dates}</span>
               </label>
             );
           })}
