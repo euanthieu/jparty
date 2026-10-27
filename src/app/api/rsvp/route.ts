@@ -1,88 +1,109 @@
 import { NextRequest } from "next/server";
 import { EVENT } from "@/features/rsvp/data/event";
 import {
-  NIGHT_IDS,
-  normalizeName,
   RsvpSchema,
   type RsvpResult,
   type RsvpStatus,
 } from "@/features/rsvp/contracts/rsvp.contract";
-import { getRedis, UpstashNotConfiguredError } from "@/shared/lib/upstash";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const KEYS = {
-  heads: "rsvp:heads",
-  votes: "rsvp:votes",
-  index: "rsvp:index",
-  guest: (id: string) => `rsvp:guest:${id}`,
-  name: (normalized: string) => `rsvp:name:${normalized}`,
-};
+/** Apps Script is slow from Vercel (2-4s, much more on a cold start). */
+export const maxDuration = 30;
+const SHEET_TIMEOUT_MS = 20_000;
 
 /**
- * Check-and-increment in one step: two guests submitting at the same moment
- * must not both squeeze into the last spot. Returns the new headcount, or -1
- * when the party would go past capacity.
+ * Every open page polls the counter, and Apps Script has a daily execution
+ * quota, so serve the status from memory for a short while.
  */
-const RESERVE_SCRIPT = `
-local current = tonumber(redis.call("GET", KEYS[1]) or "0")
-local heads = tonumber(ARGV[1])
-if current + heads <= tonumber(ARGV[2]) then
-  return redis.call("INCRBY", KEYS[1], heads)
-end
-return -1
-`;
+const STATUS_CACHE_MS = 15_000;
+let cachedStatus: { at: number; status: RsvpStatus } | null = null;
 
-async function readStatus(): Promise<RsvpStatus> {
-  const redis = getRedis();
-  const [heads, votes] = await Promise.all([
-    redis.get<number>(KEYS.heads),
-    redis.hgetall<Record<string, number>>(KEYS.votes),
-  ]);
-  const going = Number(heads ?? 0);
-  return {
-    capacity: EVENT.capacity,
-    going,
-    spotsLeft: Math.max(EVENT.capacity - going, 0),
-    isFull: going >= EVENT.capacity,
-    votes: Object.fromEntries(
-      NIGHT_IDS.map((id) => [id, Number(votes?.[id] ?? 0)]),
-    ) as RsvpStatus["votes"],
-  };
+const IG = `@${EVENT.hostInstagram}`;
+
+type SheetReply =
+  | {
+      ok: true;
+      status: RsvpStatus;
+      outcome?: RsvpResult["outcome"];
+      heads?: number;
+    }
+  | { ok: false; code: string };
+
+class SheetNotConfiguredError extends Error {}
+
+/**
+ * The guest list, the 40-head cap and duplicate checks all live in the
+ * Apps Script bound to the RSVP sheet (docs/apps-script/Code.gs), which runs
+ * them under a lock. This route only validates and forwards.
+ */
+async function callSheet(
+  payload: Record<string, unknown>,
+): Promise<SheetReply> {
+  const url = process.env.GOOGLE_SHEETS_WEBAPP_URL?.trim();
+  const secret = process.env.GOOGLE_SHEETS_SHARED_SECRET?.trim();
+  if (!url || !secret) throw new SheetNotConfiguredError();
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, secret, capacity: EVENT.capacity }),
+    signal: AbortSignal.timeout(SHEET_TIMEOUT_MS),
+    cache: "no-store",
+  });
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as SheetReply;
+  } catch {
+    // A wrong or retired /exec URL answers with an HTML error page.
+    throw new Error(`sheet replied HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
 }
 
-function storageError(err: unknown): Response {
-  if (err instanceof UpstashNotConfiguredError) {
+function errorResponse(err: unknown): Response {
+  if (err instanceof SheetNotConfiguredError) {
     console.error(
-      `[rsvp] storage is unconfigured — set ${err.missing.join(" and ")} in this deployment's environment, then redeploy`,
+      "[rsvp] GOOGLE_SHEETS_WEBAPP_URL/SECRET not set — set both in this deployment's environment, then redeploy",
     );
     return Response.json(
       {
-        error: `RSVPs aren't open yet. DM @${EVENT.hostInstagram} on Instagram to get on the list.`,
+        error: `RSVPs aren't open yet. DM ${IG} on Instagram to get on the list.`,
         code: "storage_not_configured",
       },
       { status: 503 },
     );
   }
-  console.error(
-    "[rsvp] Upstash request failed",
-    err instanceof Error ? `${err.name}: ${err.message}` : err,
-  );
+  const timedOut = err instanceof Error && err.name === "TimeoutError";
+  console.error("[rsvp] sheet request failed", err);
   return Response.json(
     {
-      error: "Couldn't save your RSVP right now. Please try again in a moment.",
-      code: "storage_failed",
+      error: timedOut
+        ? "The guest list is taking too long to respond. Please try again."
+        : "Couldn't save your RSVP right now. Please try again in a moment.",
+      code: timedOut ? "timeout" : "storage_failed",
     },
-    { status: 500 },
+    { status: timedOut ? 504 : 500 },
   );
 }
 
+/** Apps Script can only answer 200, so failures arrive as {ok:false}. */
+function rejected(code: string): Response {
+  console.error(`[rsvp] sheet rejected the request: ${code}`);
+  return errorResponse(new Error(`sheet rejected: ${code}`));
+}
+
 export async function GET() {
+  if (cachedStatus && Date.now() - cachedStatus.at < STATUS_CACHE_MS) {
+    return Response.json(cachedStatus.status);
+  }
   try {
-    return Response.json(await readStatus());
+    const reply = await callSheet({ action: "status" });
+    if (!reply.ok) return rejected(reply.code);
+    cachedStatus = { at: Date.now(), status: reply.status };
+    return Response.json(reply.status);
   } catch (err) {
-    return storageError(err);
+    return errorResponse(err);
   }
 }
 
@@ -97,52 +118,37 @@ export async function POST(req: NextRequest) {
   }
 
   const rsvp = parsed.data;
-  const id = crypto.randomUUID();
-  const heads = 1 + rsvp.plusOnes;
-
   try {
-    const redis = getRedis();
-
-    const claimed = await redis.set(KEYS.name(normalizeName(rsvp.name)), id, {
-      nx: true,
+    const reply = await callSheet({
+      action: "rsvp",
+      id: crypto.randomUUID(),
+      name: rsvp.name,
+      contact: rsvp.contact,
+      night: rsvp.night,
+      plusOnes: rsvp.plusOnes,
     });
-    if (claimed === null) {
-      return Response.json(
-        {
-          error: `${rsvp.name} is already on the list. DM @${EVENT.hostInstagram} on Instagram if you need to change your RSVP.`,
-          code: "duplicate",
-        },
-        { status: 409 },
-      );
+
+    if (!reply.ok) {
+      if (reply.code === "duplicate") {
+        return Response.json(
+          {
+            error: `${rsvp.name} is already on the list. DM ${IG} on Instagram if you need to change your RSVP.`,
+            code: "duplicate",
+          },
+          { status: 409 },
+        );
+      }
+      return rejected(reply.code);
     }
 
-    const reserved = await redis.eval<string[], number>(
-      RESERVE_SCRIPT,
-      [KEYS.heads],
-      [String(heads), String(EVENT.capacity)],
-    );
-    const outcome = reserved === -1 ? "waitlisted" : "confirmed";
-
-    // Everyone's vote counts, waitlisted guests included.
-    await Promise.all([
-      redis.set(KEYS.guest(id), {
-        ...rsvp,
-        id,
-        heads,
-        outcome,
-        createdAt: new Date().toISOString(),
-      }),
-      redis.rpush(KEYS.index, id),
-      redis.hincrby(KEYS.votes, rsvp.night, 1),
-    ]);
-
+    cachedStatus = { at: Date.now(), status: reply.status };
     const result: RsvpResult = {
-      outcome,
-      heads,
-      status: await readStatus(),
+      outcome: reply.outcome ?? "confirmed",
+      heads: reply.heads ?? 1 + rsvp.plusOnes,
+      status: reply.status,
     };
     return Response.json(result, { status: 201 });
   } catch (err) {
-    return storageError(err);
+    return errorResponse(err);
   }
 }

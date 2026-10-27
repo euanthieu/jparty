@@ -65,7 +65,7 @@ export function RsvpForm() {
   const { data: status } = useQuery({
     queryKey: STATUS_KEY,
     queryFn: fetchStatus,
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     retry: false,
     // Without storage the form still works; it just hides the counter.
     meta: { silent: true },

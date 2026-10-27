@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     siteName: "JParty",
     images: [
       {
-        url: "/party/dj-booth.jpg",
+        url: "/party/dj-booth.webp",
         width: 2000,
         height: 2000,
       },
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     title: "JParty | RSVP",
     description:
       "One night at Karma. Pick your night, bring up to 3 friends, and save your spot.",
-    images: ["/party/dj-booth.jpg"],
+    images: ["/party/dj-booth.webp"],
   },
   icons: {
     icon: "/favicon.ico",

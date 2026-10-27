@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { PARTY_PHOTOS } from "@/features/rsvp/data/event";
+import { EVENT, PARTY_PHOTOS } from "@/features/rsvp/data/event";
 
 const ROTATE_MS = 5000;
 
@@ -46,7 +46,16 @@ export function PhotoPanel() {
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
 
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+      <a
+        href={`https://instagram.com/${EVENT.venueInstagram}`}
+        target="_blank"
+        rel="noreferrer"
+        className="absolute bottom-3.5 left-4 rounded-full bg-black/45 px-3 py-1.5 text-xs text-white/90 backdrop-blur-sm transition hover:bg-black/65 hover:text-white"
+      >
+        @{EVENT.venueInstagram}
+      </a>
+
+      <div className="absolute bottom-5 right-4 flex gap-2">
         {PARTY_PHOTOS.map((p, i) => (
           <button
             key={p.src}

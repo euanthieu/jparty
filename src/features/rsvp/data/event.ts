@@ -7,6 +7,7 @@ export const EVENT = {
   host: "Justin",
   hostInstagram: "djstnn_",
   venue: "Karma",
+  venueInstagram: "karma_bydrunkenchef",
   /** Headcount, plus-ones included. RSVPs past this land on the waitlist. */
   capacity: 40,
   maxPlusOnes: 3,
@@ -19,7 +20,7 @@ export const EVENT = {
 } as const;
 
 export const PARTY_PHOTOS = [
-  { src: "/party/dj-booth.jpg", alt: "DJ booth under paper lanterns" },
-  { src: "/party/dance-floor.jpg", alt: "Crowd dancing under hanging ferns" },
-  { src: "/party/crowd-bar.jpg", alt: "Friends packed around the bar" },
+  { src: "/party/dj-booth.webp", alt: "DJ booth under paper lanterns" },
+  { src: "/party/dance-floor.webp", alt: "Crowd dancing under hanging ferns" },
+  { src: "/party/crowd-bar.webp", alt: "Friends packed around the bar" },
 ] as const;
