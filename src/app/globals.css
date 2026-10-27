@@ -152,6 +152,10 @@
   --jp-faint: #6f6c67;
   --jp-accent: #c9251b;
   --jp-accent-soft: #f0776e;
+  /* Channel forms, so Tailwind classes can fade these colours. */
+  --jp-accent-rgb: 201 37 27;
+  --jp-text-rgb: 244 241 236;
+  --jp-field-rgb: 27 27 30;
 
   background:
     radial-gradient(ellipse at 20% 0%, #1d1a17 0%, transparent 60%),

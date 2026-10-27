@@ -5,6 +5,8 @@ import { normalizeName } from "@/features/rsvp/contracts/rsvp.contract";
 // ── Stand-in for the Apps Script web app (docs/apps-script/Code.gs) ──────────
 interface Row {
   name: string;
+  contact?: string;
+  plusOnes?: number;
   night: string;
   heads: number;
   status: "Confirmed" | "Waitlist";
@@ -24,6 +26,12 @@ function summarize(capacity: number) {
     spotsLeft: Math.max(capacity - going, 0),
     isFull: going >= capacity,
     votes,
+    guests: rows.map((r) => ({
+      name: r.name,
+      plusOnes: r.plusOnes ?? r.heads - 1,
+      night: r.night,
+      status: r.status,
+    })),
   };
 }
 
@@ -43,6 +51,8 @@ function fakeSheet(_url: string, init: RequestInit) {
     const confirmed = summarize(body.capacity).going + heads <= body.capacity;
     rows.push({
       name: body.name,
+      contact: body.contact,
+      plusOnes: body.plusOnes,
       night: body.night,
       heads,
       status: confirmed ? "Confirmed" : "Waitlist",
@@ -158,5 +168,23 @@ describe("POST /api/rsvp", () => {
   it("rejects more than 3 plus-ones before calling the sheet", async () => {
     expect((await rsvp("Hal", 4)).status).toBe(400);
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("lists guests by first name and last initial, without contacts", async () => {
+    await rsvp("Juan Dela Cruz", 2, "thursday");
+    seed(34); // 3 + 34 = 37 going, so Maria's 2 fit and Liza's 4 don't
+    await rsvp("Maria Santos", 1);
+    const body = await (await rsvp("Liza", 3)).json();
+    const names = body.status.guests.map(
+      (g: { name: string; plusOnes: number; waitlisted: boolean }) =>
+        `${g.name}${g.plusOnes ? ` +${g.plusOnes}` : ""}${g.waitlisted ? " (waitlist)" : ""}`,
+    );
+    expect(names).toEqual([
+      "Juan D. +2",
+      "Earlier G. +33",
+      "Maria S. +1",
+      "Liza +3 (waitlist)",
+    ]);
+    expect(JSON.stringify(body)).not.toContain("@guest");
   });
 });

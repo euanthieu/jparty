@@ -1,26 +1,22 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EVENT } from "@/features/rsvp/data/event";
 import {
   RsvpSchema,
   type NightId,
   type RsvpInput,
   type RsvpResult,
-  type RsvpStatus,
 } from "@/features/rsvp/contracts/rsvp.contract";
+import {
+  RSVP_STATUS_KEY,
+  useRsvpStatus,
+} from "@/features/rsvp/hooks/useRsvpStatus";
 
-const STATUS_KEY = ["rsvp", "status"] as const;
 const IG_URL = `https://instagram.com/${EVENT.hostInstagram}`;
 
 type FieldErrors = Partial<Record<keyof RsvpInput, string>>;
-
-async function fetchStatus(): Promise<RsvpStatus> {
-  const res = await fetch("/api/rsvp", { cache: "no-store" });
-  if (!res.ok) throw new Error("status unavailable");
-  return res.json();
-}
 
 async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
   const res = await fetch("/api/rsvp", {
@@ -36,7 +32,7 @@ async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
 }
 
 const fieldClass =
-  "w-full rounded-md border border-[var(--jp-border)] bg-[var(--jp-field)] px-3.5 py-3 text-sm text-[var(--jp-text)] placeholder:text-[var(--jp-faint)] outline-none transition focus:border-[var(--jp-text)]/60 focus:ring-2 focus:ring-white/10 aria-[invalid=true]:border-[var(--jp-accent)]";
+  "w-full rounded-md border border-[var(--jp-border)] bg-[var(--jp-field)] px-3.5 py-3 text-sm text-[var(--jp-text)] placeholder:text-[var(--jp-faint)] outline-none transition focus:border-[rgb(var(--jp-text-rgb)/0.6)] focus:ring-2 focus:ring-white/10 aria-[invalid=true]:border-[var(--jp-accent)]";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
@@ -62,14 +58,7 @@ function IgLink() {
 
 export function RsvpForm() {
   const queryClient = useQueryClient();
-  const { data: status } = useQuery({
-    queryKey: STATUS_KEY,
-    queryFn: fetchStatus,
-    refetchInterval: 60_000,
-    retry: false,
-    // Without storage the form still works; it just hides the counter.
-    meta: { silent: true },
-  });
+  const { data: status } = useRsvpStatus();
 
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
@@ -81,7 +70,8 @@ export function RsvpForm() {
   const mutation = useMutation({
     mutationFn: submitRsvp,
     meta: { silent: true },
-    onSuccess: (result) => queryClient.setQueryData(STATUS_KEY, result.status),
+    onSuccess: (result) =>
+      queryClient.setQueryData(RSVP_STATUS_KEY, result.status),
   });
 
   const heads = 1 + plusOnes;
@@ -116,7 +106,7 @@ export function RsvpForm() {
     return (
       <div
         role="status"
-        className="rounded-xl border border-[var(--jp-border)] bg-[var(--jp-field)]/60 p-6"
+        className="rounded-xl border border-[var(--jp-border)] bg-[rgb(var(--jp-field-rgb)/0.6)] p-6"
       >
         {outcome === "confirmed" ? (
           <>
@@ -170,10 +160,20 @@ export function RsvpForm() {
         </div>
       )}
 
-      {status?.isFull && (
-        <p className="rounded-md border border-[var(--jp-accent)]/40 bg-[var(--jp-accent)]/10 px-3.5 py-3 text-xs leading-relaxed text-[var(--jp-text)]">
-          The list is full. You can still vote for the night, but new RSVPs go
-          to the waitlist. Or DM <IgLink />.
+      {status?.isFull ? (
+        <p className="rounded-md border border-[rgb(var(--jp-accent-rgb)/0.4)] bg-[rgb(var(--jp-accent-rgb)/0.1)] px-3.5 py-3 text-xs leading-relaxed text-[var(--jp-text)]">
+          <span className="font-semibold">
+            Sign-ups are closed: we&rsquo;ve hit {EVENT.capacity} pax.
+          </span>{" "}
+          You can still vote for the night and join the waitlist, or DM{" "}
+          <IgLink />.
+        </p>
+      ) : (
+        <p className="text-xs leading-relaxed text-[var(--jp-muted)]">
+          <span className="font-semibold text-[var(--jp-text)]">
+            Sign-ups close once {EVENT.capacity} pax are in.
+          </span>{" "}
+          After that, new RSVPs go to the waitlist.
         </p>
       )}
 
@@ -232,7 +232,7 @@ export function RsvpForm() {
                 className={`flex cursor-pointer items-center justify-between rounded-md border px-3.5 py-3 text-sm transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-white/30 ${
                   selected
                     ? "border-[var(--jp-text)] bg-[var(--jp-text)] text-[var(--jp-bg)]"
-                    : "border-[var(--jp-border)] bg-[var(--jp-field)] text-[var(--jp-text)] hover:border-[var(--jp-text)]/40"
+                    : "border-[var(--jp-border)] bg-[var(--jp-field)] text-[var(--jp-text)] hover:border-[rgb(var(--jp-text-rgb)/0.4)]"
                 }`}
               >
                 <input
@@ -271,7 +271,7 @@ export function RsvpForm() {
                 className={`cursor-pointer rounded-md border py-2.5 text-center text-sm transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-white/30 ${
                   selected
                     ? "border-[var(--jp-text)] bg-[var(--jp-text)] text-[var(--jp-bg)]"
-                    : "border-[var(--jp-border)] bg-[var(--jp-field)] text-[var(--jp-text)] hover:border-[var(--jp-text)]/40"
+                    : "border-[var(--jp-border)] bg-[var(--jp-field)] text-[var(--jp-text)] hover:border-[rgb(var(--jp-text-rgb)/0.4)]"
                 }`}
               >
                 <input
@@ -297,18 +297,26 @@ export function RsvpForm() {
       </fieldset>
 
       <div>
-        <label className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed text-[var(--jp-muted)]">
+        <label
+          className={`flex cursor-pointer items-start gap-3 rounded-md border px-3.5 py-3.5 transition ${
+            agreedToFee
+              ? "border-[var(--jp-accent)] bg-[rgb(var(--jp-accent-rgb)/0.15)]"
+              : "border-[rgb(var(--jp-accent-rgb)/0.6)] bg-[rgb(var(--jp-accent-rgb)/0.08)] hover:bg-[rgb(var(--jp-accent-rgb)/0.15)]"
+          }`}
+        >
           <input
             type="checkbox"
             checked={agreedToFee}
             onChange={(e) => setAgreedToFee(e.target.checked)}
             aria-invalid={Boolean(errors.agreedToFee)}
             aria-describedby={errors.agreedToFee ? "rsvp-fee-error" : undefined}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-white"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--jp-accent)]"
           />
-          <span>
-            I&rsquo;m good with the entrance fee. Food and drinks are covered by{" "}
-            {EVENT.host}.
+          <span className="text-xs leading-relaxed text-[var(--jp-muted)]">
+            <span className="block text-sm font-semibold text-[var(--jp-text)]">
+              I&rsquo;ll pay the entrance fee ({EVENT.entranceFee}).
+            </span>
+            Food and drinks are covered by {EVENT.host}.
           </span>
         </label>
         <FieldError id="rsvp-fee-error" message={errors.agreedToFee} />
@@ -317,7 +325,7 @@ export function RsvpForm() {
       {mutation.isError && (
         <p
           role="alert"
-          className="rounded-md border border-[var(--jp-accent)]/40 bg-[var(--jp-accent)]/10 px-3.5 py-3 text-xs text-[var(--jp-text)]"
+          className="rounded-md border border-[rgb(var(--jp-accent-rgb)/0.4)] bg-[rgb(var(--jp-accent-rgb)/0.1)] px-3.5 py-3 text-xs text-[var(--jp-text)]"
         >
           {mutation.error.message}
         </p>

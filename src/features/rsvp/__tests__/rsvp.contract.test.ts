@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  displayName,
   normalizeName,
   RsvpSchema,
 } from "@/features/rsvp/contracts/rsvp.contract";
@@ -40,5 +41,21 @@ describe("normalizeName", () => {
     expect(normalizeName("  Juan   DELA cruz ")).toBe(
       normalizeName("juan dela cruz"),
     );
+  });
+});
+
+describe("displayName", () => {
+  it("shortens to first name and last initial", () => {
+    expect(displayName("Maria Santos")).toBe("Maria S.");
+    expect(displayName("Ana Marie Reyes")).toBe("Ana R.");
+  });
+
+  it("keeps compound surnames together", () => {
+    expect(displayName("  juan  dela cruz ")).toBe("juan D.");
+    expect(displayName("Paolo De los Santos")).toBe("Paolo D.");
+  });
+
+  it("keeps a single name as is", () => {
+    expect(displayName("Liza")).toBe("Liza");
   });
 });

@@ -1,14 +1,15 @@
 import { EVENT } from "@/features/rsvp/data/event";
 import { PhotoPanel } from "@/features/rsvp/components/PhotoPanel";
 import { RsvpForm } from "@/features/rsvp/components/RsvpForm";
+import { GuestList } from "@/features/rsvp/components/GuestList";
 
 const DETAILS = [
   { label: "Venue", value: EVENT.venue },
   { label: "Night (vote)", value: "Thu or Fri" },
-  { label: "Entrance", value: `Fee ${EVENT.entranceFee}` },
+  { label: "Entrance fee", value: EVENT.entranceFee, highlight: true },
   { label: "Food & drinks", value: "Covered" },
   { label: "Curfew", value: EVENT.curfew },
-  { label: "Cap", value: `${EVENT.capacity} people` },
+  { label: "Cap", value: `${EVENT.capacity} pax, then closed` },
 ];
 
 /** Hand-drawn stroke under the headline, echoing a brush mark. */
@@ -54,25 +55,42 @@ export function RsvpPage() {
           <p className="mt-6 max-w-md text-sm leading-relaxed text-[var(--jp-muted)]">
             One night at {EVENT.venue}. Food and drinks are on {EVENT.host}, so
             just bring the entrance fee and up to {EVENT.maxPlusOnes} friends.
-            Pick your night, and the majority wins.
+            Pick your night, and the majority wins. Only {EVENT.capacity} pax,
+            so sign up before it closes.
           </p>
 
           <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-3 border-y border-[var(--jp-border)] py-5 sm:grid-cols-3">
-            {DETAILS.map((d) => (
-              <div key={d.label}>
-                <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--jp-faint)]">
-                  {d.label}
-                </dt>
-                <dd className="mt-0.5 text-sm text-[var(--jp-text)]">
-                  {d.value}
-                </dd>
-              </div>
-            ))}
+            {DETAILS.map((d) =>
+              "highlight" in d ? (
+                <div
+                  key={d.label}
+                  className="-mx-2 -my-1 rounded-md bg-[rgb(var(--jp-accent-rgb)/0.15)] px-2 py-1 ring-1 ring-[rgb(var(--jp-accent-rgb)/0.5)]"
+                >
+                  <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--jp-accent-soft)]">
+                    {d.label}
+                  </dt>
+                  <dd className="mt-0.5 text-sm font-semibold text-[var(--jp-text)]">
+                    {d.value}
+                  </dd>
+                </div>
+              ) : (
+                <div key={d.label}>
+                  <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--jp-faint)]">
+                    {d.label}
+                  </dt>
+                  <dd className="mt-0.5 text-sm text-[var(--jp-text)]">
+                    {d.value}
+                  </dd>
+                </div>
+              ),
+            )}
           </dl>
 
           <div className="mt-7">
             <RsvpForm />
           </div>
+
+          <GuestList />
 
           <p className="mt-6 text-xs text-[var(--jp-faint)]">
             Questions? DM{" "}

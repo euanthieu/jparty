@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { EVENT } from "@/features/rsvp/data/event";
 import {
+  displayName,
+  NIGHT_IDS,
   RsvpSchema,
+  type NightId,
   type RsvpResult,
   type RsvpStatus,
 } from "@/features/rsvp/contracts/rsvp.contract";
@@ -22,14 +25,34 @@ let cachedStatus: { at: number; status: RsvpStatus } | null = null;
 
 const IG = `@${EVENT.hostInstagram}`;
 
+/** The sheet sends full names; the page only ever sees display names. */
+interface SheetStatus extends Omit<RsvpStatus, "guests"> {
+  guests?: { name: string; plusOnes: number; night: string; status: string }[];
+}
+
 type SheetReply =
   | {
       ok: true;
-      status: RsvpStatus;
+      status: SheetStatus;
       outcome?: RsvpResult["outcome"];
       heads?: number;
     }
   | { ok: false; code: string };
+
+function toPublicStatus(status: SheetStatus): RsvpStatus {
+  return {
+    ...status,
+    // An Apps Script deployment predating the guest list sends none.
+    guests: (status.guests ?? []).map((g) => ({
+      name: displayName(g.name),
+      plusOnes: Number(g.plusOnes) || 0,
+      night: (NIGHT_IDS as readonly string[]).includes(g.night)
+        ? (g.night as NightId)
+        : null,
+      waitlisted: g.status.toLowerCase() !== "confirmed",
+    })),
+  };
+}
 
 class SheetNotConfiguredError extends Error {}
 
@@ -100,8 +123,9 @@ export async function GET() {
   try {
     const reply = await callSheet({ action: "status" });
     if (!reply.ok) return rejected(reply.code);
-    cachedStatus = { at: Date.now(), status: reply.status };
-    return Response.json(reply.status);
+    const status = toPublicStatus(reply.status);
+    cachedStatus = { at: Date.now(), status };
+    return Response.json(status);
   } catch (err) {
     return errorResponse(err);
   }
@@ -141,11 +165,12 @@ export async function POST(req: NextRequest) {
       return rejected(reply.code);
     }
 
-    cachedStatus = { at: Date.now(), status: reply.status };
+    const status = toPublicStatus(reply.status);
+    cachedStatus = { at: Date.now(), status };
     const result: RsvpResult = {
       outcome: reply.outcome ?? "confirmed",
       heads: reply.heads ?? 1 + rsvp.plusOnes,
-      status: reply.status,
+      status,
     };
     return Response.json(result, { status: 201 });
   } catch (err) {

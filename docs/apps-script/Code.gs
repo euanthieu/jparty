@@ -29,7 +29,7 @@ const HEADERS = [
   "Status",
   "ID",
 ];
-const COL = { name: 1, night: 3, heads: 5, status: 6 };
+const COL = { name: 1, night: 3, plusOnes: 4, heads: 5, status: 6 };
 const NIGHTS = ["thursday", "friday"];
 
 function doPost(e) {
@@ -113,12 +113,22 @@ function readRows(sheet) {
     .filter((r) => String(r[COL.name]).trim() !== "");
 }
 
-/** Votes count every guest, waitlisted ones included. */
+/**
+ * Votes count every guest, waitlisted ones included. The guest list carries
+ * names only — contacts never leave the sheet.
+ */
 function summarize(rows, capacity) {
   let going = 0;
   const votes = {};
+  const guests = [];
   NIGHTS.forEach((n) => (votes[n] = 0));
   rows.forEach((r) => {
+    guests.push({
+      name: String(r[COL.name]),
+      plusOnes: Number(r[COL.plusOnes]) || 0,
+      night: String(r[COL.night]).toLowerCase(),
+      status: String(r[COL.status]),
+    });
     if (String(r[COL.status]).toLowerCase() === "confirmed") {
       going += Number(r[COL.heads]) || 1;
     }
@@ -131,6 +141,7 @@ function summarize(rows, capacity) {
     spotsLeft: Math.max(capacity - going, 0),
     isFull: going >= capacity,
     votes: votes,
+    guests: guests,
   };
 }
 

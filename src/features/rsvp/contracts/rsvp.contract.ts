@@ -27,6 +27,14 @@ export const RsvpSchema = z.object({
 
 export type RsvpInput = z.infer<typeof RsvpSchema>;
 
+/** What the public page shows per guest — never their contact. */
+export interface GuestEntry {
+  name: string;
+  plusOnes: number;
+  night: NightId | null;
+  waitlisted: boolean;
+}
+
 export interface RsvpStatus {
   capacity: number;
   /** Confirmed heads, plus-ones included. */
@@ -34,6 +42,7 @@ export interface RsvpStatus {
   spotsLeft: number;
   isFull: boolean;
   votes: Record<NightId, number>;
+  guests: GuestEntry[];
 }
 
 export interface RsvpResult {
@@ -45,4 +54,34 @@ export interface RsvpResult {
 /** Same person typed with different spacing or case is still the same RSVP. */
 export function normalizeName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Words that start a compound surname, as in "Dela Cruz" or "De los Santos". */
+const SURNAME_PARTICLES = new Set([
+  "de",
+  "del",
+  "dela",
+  "della",
+  "delos",
+  "los",
+  "la",
+  "san",
+  "santa",
+  "sta",
+  "sto",
+]);
+
+/** "Juan Dela Cruz" → "Juan D." — enough for friends to spot each other. */
+export function displayName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return parts[0] ?? "Guest";
+
+  let surnameStart = parts.length - 1;
+  while (
+    surnameStart > 1 &&
+    SURNAME_PARTICLES.has(parts[surnameStart - 1].toLowerCase())
+  ) {
+    surnameStart -= 1;
+  }
+  return `${parts[0]} ${parts[surnameStart][0].toUpperCase()}.`;
 }
