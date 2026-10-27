@@ -1,7 +1,16 @@
 "use client";
 
-import type { GuestEntry } from "@/features/rsvp/contracts/rsvp.contract";
+import type {
+  GuestEntry,
+  NightId,
+} from "@/features/rsvp/contracts/rsvp.contract";
 import { useRsvpStatus } from "@/features/rsvp/hooks/useRsvpStatus";
+
+/** The night each guest said they'd prefer. */
+const NIGHT_SHORT: Record<NightId, string> = {
+  thursday: "Thu",
+  friday: "Fri",
+};
 
 function GuestChip({ guest }: { guest: GuestEntry }) {
   return (
@@ -13,6 +22,11 @@ function GuestChip({ guest }: { guest: GuestEntry }) {
       }`}
     >
       <span>{guest.name}</span>
+      {guest.night && (
+        <span className="text-[0.65rem] uppercase tracking-wider text-[var(--jp-muted)]">
+          {NIGHT_SHORT[guest.night]}
+        </span>
+      )}
       {guest.plusOnes > 0 && (
         <span className="rounded-full bg-white/10 px-1.5 py-px text-[0.65rem] font-semibold">
           +{guest.plusOnes}
