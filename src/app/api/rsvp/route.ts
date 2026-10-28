@@ -40,18 +40,25 @@ type SheetReply =
   | { ok: false; code: string };
 
 function toPublicStatus(status: SheetStatus): RsvpStatus {
-  return {
-    ...status,
-    // An Apps Script deployment predating the guest list sends none.
-    guests: (status.guests ?? []).map((g) => ({
-      name: displayName(g.name),
-      plusOnes: Number(g.plusOnes) || 0,
-      night: (NIGHT_IDS as readonly string[]).includes(g.night)
-        ? (g.night as NightId)
-        : null,
-      waitlisted: g.status.toLowerCase() !== "confirmed",
-    })),
-  };
+  // An Apps Script deployment predating the guest list sends none.
+  const guests = (status.guests ?? []).map((g) => ({
+    name: displayName(g.name),
+    plusOnes: Number(g.plusOnes) || 0,
+    night: (NIGHT_IDS as readonly string[]).includes(g.night)
+      ? (g.night as NightId)
+      : null,
+    waitlisted: g.status.toLowerCase() !== "confirmed",
+  }));
+
+  // Counted here rather than trusting the sheet's tally, so changing the
+  // night options doesn't need the Apps Script redeployed.
+  const votes = Object.fromEntries(NIGHT_IDS.map((n) => [n, 0])) as Record<
+    NightId,
+    number
+  >;
+  for (const g of guests) if (g.night) votes[g.night] += 1;
+
+  return { ...status, votes, guests };
 }
 
 class SheetNotConfiguredError extends Error {}

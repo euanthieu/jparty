@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { EVENT } from "@/features/rsvp/data/event";
 
-export const NIGHT_IDS = ["thursday", "friday"] as const;
+export const NIGHT_IDS = ["friday", "saturday"] as const;
 export type NightId = (typeof NIGHT_IDS)[number];
 
 /** Shared by the form and the API so both reject the same input. */

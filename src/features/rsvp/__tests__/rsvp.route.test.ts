@@ -70,7 +70,7 @@ function fakeSheet(_url: string, init: RequestInit) {
 function seed(going: number) {
   rows.push({
     name: "Earlier guests",
-    night: "thursday",
+    night: "saturday",
     heads: going,
     status: "Confirmed",
   });
@@ -124,10 +124,10 @@ describe("POST /api/rsvp", () => {
 
   it("waitlists a party that would push past 40, but still counts the vote", async () => {
     seed(38);
-    const body = await (await rsvp("Ben", 2, "thursday")).json();
+    const body = await (await rsvp("Ben", 2, "saturday")).json();
     expect(body.outcome).toBe("waitlisted");
     expect(body.status.going).toBe(38);
-    expect(body.status.votes.thursday).toBe(2);
+    expect(body.status.votes.saturday).toBe(2);
   });
 
   it("fills the last spot exactly, then closes", async () => {
@@ -171,7 +171,7 @@ describe("POST /api/rsvp", () => {
   });
 
   it("lists guests by first name and last initial, without contacts", async () => {
-    await rsvp("Juan Dela Cruz", 2, "thursday");
+    await rsvp("Juan Dela Cruz", 2, "saturday");
     seed(34); // 3 + 34 = 37 going, so Maria's 2 fit and Liza's 4 don't
     await rsvp("Maria Santos", 1);
     const body = await (await rsvp("Liza", 3)).json();

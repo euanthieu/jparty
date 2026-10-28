@@ -8,7 +8,7 @@ import {
 const valid = {
   name: "Juan Dela Cruz",
   contact: "@juan.dc",
-  night: "thursday",
+  night: "saturday",
   plusOnes: 2,
   agreedToFee: true,
 };
@@ -23,8 +23,8 @@ describe("RsvpSchema", () => {
     expect(RsvpSchema.safeParse({ ...valid, plusOnes: 4 }).success).toBe(false);
   });
 
-  it("only allows Thursday or Friday", () => {
-    expect(RsvpSchema.safeParse({ ...valid, night: "saturday" }).success).toBe(
+  it("only allows Friday or Saturday", () => {
+    expect(RsvpSchema.safeParse({ ...valid, night: "thursday" }).success).toBe(
       false,
     );
   });

@@ -30,7 +30,7 @@ const HEADERS = [
   "ID",
 ];
 const COL = { name: 1, night: 3, plusOnes: 4, heads: 5, status: 6 };
-const NIGHTS = ["thursday", "friday"];
+const NIGHTS = ["friday", "saturday"];
 
 function doPost(e) {
   let body;

@@ -18,8 +18,8 @@ const IG_URL = `https://instagram.com/${EVENT.hostInstagram}`;
 
 /** Friday is booked; this only tells Justin which night guests would have picked. */
 const NIGHT_OPTIONS: { id: NightId; label: string; dates: string }[] = [
-  { id: "thursday", label: "Thursday", dates: "Jan 7 or 14" },
   { id: "friday", label: "Friday", dates: EVENT.dateOptions },
+  { id: "saturday", label: "Saturday", dates: "Jan 9 or 16" },
 ];
 
 type FieldErrors = Partial<Record<keyof RsvpInput, string>>;

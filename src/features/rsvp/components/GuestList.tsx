@@ -8,8 +8,8 @@ import { useRsvpStatus } from "@/features/rsvp/hooks/useRsvpStatus";
 
 /** The night each guest said they'd prefer. */
 const NIGHT_SHORT: Record<NightId, string> = {
-  thursday: "Thu",
   friday: "Fri",
+  saturday: "Sat",
 };
 
 function GuestChip({ guest }: { guest: GuestEntry }) {
