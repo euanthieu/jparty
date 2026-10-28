@@ -113,7 +113,19 @@ export function RsvpForm() {
         role="status"
         className="rounded-xl border border-[var(--jp-border)] bg-[rgb(var(--jp-field-rgb)/0.6)] p-6"
       >
-        {outcome === "confirmed" ? (
+        {outcome === "voted" ? (
+          <>
+            <p className="font-[family-name:var(--font-lora)] text-3xl text-[var(--jp-text)]">
+              Vote counted, {firstName}.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--jp-muted)]">
+              You were already on the list, so we added your vote for{" "}
+              {NIGHT_OPTIONS.find((o) => o.id === night)?.label} to your
+              existing RSVP. Your {held === 1 ? "spot" : `${held} spots`} stay
+              the same.
+            </p>
+          </>
+        ) : outcome === "confirmed" ? (
           <>
             <p className="font-[family-name:var(--font-lora)] text-3xl text-[var(--jp-text)]">
               You&rsquo;re in, {firstName}.

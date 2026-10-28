@@ -15,7 +15,11 @@
  *
  * Editing the sheet by hand is fine: counts are re-read on every request, so
  * changing a row's Status to "Confirmed" or "Waitlist" (or deleting a row)
- * updates the spots left on the site.
+ * updates the spots left on the site. Clearing a guest's Night lets them vote
+ * once more by signing up again with the same name and contact.
+ *
+ * After pasting a new version: Deploy > Manage deployments > edit (pencil) >
+ * Version: New version > Deploy. That keeps the same /exec URL.
  */
 const SHARED_SECRET = "CHANGE_ME";
 const SHEET_NAME = "RSVPs";
@@ -29,7 +33,7 @@ const HEADERS = [
   "Status",
   "ID",
 ];
-const COL = { name: 1, night: 3, plusOnes: 4, heads: 5, status: 6 };
+const COL = { name: 1, contact: 2, night: 3, plusOnes: 4, heads: 5, status: 6 };
 const NIGHTS = ["friday", "saturday"];
 
 function doPost(e) {
@@ -55,9 +59,24 @@ function doPost(e) {
     }
 
     if (body.action === "rsvp") {
-      const key = normalize(body.name);
-      if (rows.some((r) => normalize(r[COL.name]) === key)) {
-        return json({ ok: false, code: "duplicate" });
+      const existing = findGuest(sheet, body.name);
+      if (existing) {
+        // Guests restored after the vote reset have a blank Night. If they
+        // sign up again with the same contact, record their vote on their
+        // existing row: same spot, same heads, one vote each.
+        const canVote =
+          String(existing.values[COL.night]).trim() === "" &&
+          normalizeContact(existing.values[COL.contact]) ===
+            normalizeContact(body.contact);
+        if (!canVote) return json({ ok: false, code: "duplicate" });
+
+        sheet.getRange(existing.row, COL.night + 1).setValue(body.night);
+        return json({
+          ok: true,
+          outcome: "voted",
+          heads: Number(existing.values[COL.heads]) || 1,
+          status: summarize(readRows(sheet), capacity),
+        });
       }
 
       const heads = 1 + Number(body.plusOnes || 0);
@@ -143,6 +162,29 @@ function summarize(rows, capacity) {
     votes: votes,
     guests: guests,
   };
+}
+
+/** The guest's row (1-based sheet row number) and its values, or null. */
+function findGuest(sheet, name) {
+  const last = sheet.getLastRow();
+  if (last < 2) return null;
+  const key = normalize(name);
+  const values = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
+  for (let i = 0; i < values.length; i++) {
+    if (normalize(values[i][COL.name]) === key) {
+      return { row: i + 2, values: values[i] };
+    }
+  }
+  return null;
+}
+
+/** "@Juan.DC" and "juan.dc", or "0917 123 4567" and "09171234567", match. */
+function normalizeContact(contact) {
+  return String(contact || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, "")
+    .replace(/[\s()-]/g, "");
 }
 
 function normalize(name) {

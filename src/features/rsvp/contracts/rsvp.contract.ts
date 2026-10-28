@@ -48,7 +48,8 @@ export interface RsvpStatus {
 }
 
 export interface RsvpResult {
-  outcome: "confirmed" | "waitlisted";
+  /** "voted": a guest already on the list added their night to their row. */
+  outcome: "confirmed" | "waitlisted" | "voted";
   heads: number;
   status: RsvpStatus;
 }

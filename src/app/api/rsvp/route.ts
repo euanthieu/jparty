@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
       if (reply.code === "duplicate") {
         return Response.json(
           {
-            error: `${rsvp.name} is already on the list. DM ${IG} on Instagram if you need to change your RSVP.`,
+            error: `${rsvp.name} is already on the list. If you signed up before the vote reset, use the same IG or mobile you used then. Each guest votes once; DM ${IG} on Instagram to change your RSVP.`,
             code: "duplicate",
           },
           { status: 409 },

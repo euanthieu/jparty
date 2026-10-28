@@ -14,6 +14,14 @@ interface Row {
 let rows: Row[] = [];
 let secretAccepted = true;
 
+function normalizeContact(contact = "") {
+  return contact
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, "")
+    .replace(/[\s()-]/g, "");
+}
+
 function summarize(capacity: number) {
   const going = rows
     .filter((r) => r.status === "Confirmed")
@@ -45,7 +53,23 @@ function fakeSheet(_url: string, init: RequestInit) {
   } else if (
     rows.some((r) => normalizeName(r.name) === normalizeName(body.name))
   ) {
-    reply = { ok: false, code: "duplicate" };
+    const existing = rows.find(
+      (r) => normalizeName(r.name) === normalizeName(body.name),
+    )!;
+    const canVote =
+      existing.night === "" &&
+      normalizeContact(existing.contact) === normalizeContact(body.contact);
+    if (canVote) {
+      existing.night = body.night;
+      reply = {
+        ok: true,
+        outcome: "voted",
+        heads: existing.heads,
+        status: summarize(body.capacity),
+      };
+    } else {
+      reply = { ok: false, code: "duplicate" };
+    }
   } else {
     const heads = 1 + body.plusOnes;
     const confirmed = summarize(body.capacity).going + heads <= body.capacity;
@@ -128,6 +152,51 @@ describe("POST /api/rsvp", () => {
     expect(body.outcome).toBe("waitlisted");
     expect(body.status.going).toBe(38);
     expect(body.status.votes.saturday).toBe(2);
+  });
+
+  it("adds a restored guest's vote to their row without taking more spots", async () => {
+    rows.push({
+      name: "Bianca",
+      contact: "@Guest",
+      night: "",
+      heads: 2,
+      status: "Confirmed",
+    });
+    const res = await rsvp("bianca", 3, "saturday");
+    const body = await res.json();
+    expect(res.status).toBe(201);
+    expect(body.outcome).toBe("voted");
+    expect(body.heads).toBe(2);
+    expect(body.status.going).toBe(2);
+    expect(body.status.votes.saturday).toBe(1);
+    expect(rows).toHaveLength(1);
+  });
+
+  it("lets each restored guest vote only once", async () => {
+    rows.push({
+      name: "Bianca",
+      contact: "@guest",
+      night: "",
+      heads: 2,
+      status: "Confirmed",
+    });
+    await rsvp("Bianca", 1, "saturday");
+    const again = await rsvp("Bianca", 1, "friday");
+    expect(again.status).toBe(409);
+    expect(rows[0].night).toBe("saturday");
+  });
+
+  it("won't take a vote under someone else's name", async () => {
+    rows.push({
+      name: "Bianca",
+      contact: "@biaengca",
+      night: "",
+      heads: 2,
+      status: "Confirmed",
+    });
+    const res = await rsvp("Bianca", 1, "saturday");
+    expect(res.status).toBe(409);
+    expect(rows[0].night).toBe("");
   });
 
   it("fills the last spot exactly, then closes", async () => {
