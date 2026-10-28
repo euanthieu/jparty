@@ -23,6 +23,13 @@ describe("RsvpSchema", () => {
     expect(RsvpSchema.safeParse({ ...valid, plusOnes: 4 }).success).toBe(false);
   });
 
+  it("requires a plus-ones answer, even Just me", () => {
+    expect(
+      RsvpSchema.safeParse({ ...valid, plusOnes: undefined }).success,
+    ).toBe(false);
+    expect(RsvpSchema.safeParse({ ...valid, plusOnes: 0 }).success).toBe(true);
+  });
+
   it("only allows Friday or Saturday", () => {
     expect(RsvpSchema.safeParse({ ...valid, night: "thursday" }).success).toBe(
       false,

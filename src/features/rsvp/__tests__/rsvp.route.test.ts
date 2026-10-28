@@ -43,6 +43,18 @@ function summarize(capacity: number) {
   };
 }
 
+/** Name first, then contact — same order as Code.gs findGuest. */
+function findGuest(name: string, contact: string) {
+  return (
+    rows.find((r) => normalizeName(r.name) === normalizeName(name)) ??
+    (normalizeContact(contact)
+      ? rows.find(
+          (r) => normalizeContact(r.contact) === normalizeContact(contact),
+        )
+      : undefined)
+  );
+}
+
 function fakeSheet(_url: string, init: RequestInit) {
   const body = JSON.parse(String(init.body));
   let reply: unknown;
@@ -50,12 +62,8 @@ function fakeSheet(_url: string, init: RequestInit) {
     reply = { ok: false, code: "unauthorized" };
   } else if (body.action === "status") {
     reply = { ok: true, status: summarize(body.capacity) };
-  } else if (
-    rows.some((r) => normalizeName(r.name) === normalizeName(body.name))
-  ) {
-    const existing = rows.find(
-      (r) => normalizeName(r.name) === normalizeName(body.name),
-    )!;
+  } else if (findGuest(body.name, body.contact)) {
+    const existing = findGuest(body.name, body.contact)!;
     const canVote =
       existing.night === "" &&
       normalizeContact(existing.contact) === normalizeContact(body.contact);
@@ -105,13 +113,18 @@ async function loadRoute() {
   return import("@/app/api/rsvp/route");
 }
 
-async function rsvp(name: string, plusOnes = 0, night = "friday") {
+async function rsvp(
+  name: string,
+  plusOnes = 0,
+  night = "friday",
+  contact = `@${name.toLowerCase().replace(/\s+/g, "")}`,
+) {
   const { POST } = await loadRoute();
   const req = new Request("http://localhost/api/rsvp", {
     method: "POST",
     body: JSON.stringify({
       name,
-      contact: "@guest",
+      contact,
       night,
       plusOnes,
       agreedToFee: true,
@@ -162,7 +175,7 @@ describe("POST /api/rsvp", () => {
       heads: 2,
       status: "Confirmed",
     });
-    const res = await rsvp("bianca", 3, "saturday");
+    const res = await rsvp("bianca", 3, "saturday", "guest");
     const body = await res.json();
     expect(res.status).toBe(201);
     expect(body.outcome).toBe("voted");
@@ -180,9 +193,26 @@ describe("POST /api/rsvp", () => {
       heads: 2,
       status: "Confirmed",
     });
-    await rsvp("Bianca", 1, "saturday");
-    const again = await rsvp("Bianca", 1, "friday");
+    await rsvp("Bianca", 1, "saturday", "@guest");
+    const again = await rsvp("Bianca", 1, "friday", "@guest");
     expect(again.status).toBe(409);
+    expect(rows[0].night).toBe("saturday");
+  });
+
+  it("recognizes a restored guest by contact when they type their name differently", async () => {
+    rows.push({
+      name: "Trisha Ricci Vidal",
+      contact: "@guest",
+      night: "",
+      heads: 4,
+      status: "Confirmed",
+    });
+    const body = await (
+      await rsvp("Trisha Vidal", 3, "saturday", "guest")
+    ).json();
+    expect(body.outcome).toBe("voted");
+    expect(body.status.going).toBe(4);
+    expect(rows).toHaveLength(1);
     expect(rows[0].night).toBe("saturday");
   });
 
@@ -194,7 +224,7 @@ describe("POST /api/rsvp", () => {
       heads: 2,
       status: "Confirmed",
     });
-    const res = await rsvp("Bianca", 1, "saturday");
+    const res = await rsvp("Bianca", 1, "saturday", "@guest");
     expect(res.status).toBe(409);
     expect(rows[0].night).toBe("");
   });

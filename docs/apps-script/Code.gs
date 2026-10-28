@@ -59,7 +59,7 @@ function doPost(e) {
     }
 
     if (body.action === "rsvp") {
-      const existing = findGuest(sheet, body.name);
+      const existing = findGuest(sheet, body.name, body.contact);
       if (existing) {
         // Guests restored after the vote reset have a blank Night. If they
         // sign up again with the same contact, record their vote on their
@@ -164,18 +164,23 @@ function summarize(rows, capacity) {
   };
 }
 
-/** The guest's row (1-based sheet row number) and its values, or null. */
-function findGuest(sheet, name) {
+/**
+ * The guest's row (1-based sheet row number) and its values, or null.
+ * Matches the name first, then the contact, so "Trisha Vidal" with the same
+ * IG is still the "Trisha Ricci Vidal" already on the list.
+ */
+function findGuest(sheet, name, contact) {
   const last = sheet.getLastRow();
   if (last < 2) return null;
-  const key = normalize(name);
   const values = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
-  for (let i = 0; i < values.length; i++) {
-    if (normalize(values[i][COL.name]) === key) {
-      return { row: i + 2, values: values[i] };
-    }
-  }
-  return null;
+  const key = normalize(name);
+  const byName = values.findIndex((r) => normalize(r[COL.name]) === key);
+  const contactKey = normalizeContact(contact);
+  const i =
+    byName !== -1 || !contactKey
+      ? byName
+      : values.findIndex((r) => normalizeContact(r[COL.contact]) === contactKey);
+  return i === -1 ? null : { row: i + 2, values: values[i] };
 }
 
 /** "@Juan.DC" and "juan.dc", or "0917 123 4567" and "09171234567", match. */

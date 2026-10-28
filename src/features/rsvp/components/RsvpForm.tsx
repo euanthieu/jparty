@@ -49,6 +49,14 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
+function Required() {
+  return (
+    <span aria-hidden className="ml-0.5 text-[var(--jp-accent-soft)]">
+      *
+    </span>
+  );
+}
+
 function IgLink() {
   return (
     <a
@@ -68,7 +76,8 @@ export function RsvpForm() {
 
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [plusOnes, setPlusOnes] = useState(0);
+  // No default, so every guest answers each question.
+  const [plusOnes, setPlusOnes] = useState<number | null>(null);
   const [night, setNight] = useState<NightId | null>(null);
   const [agreedToFee, setAgreedToFee] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -80,7 +89,7 @@ export function RsvpForm() {
       queryClient.setQueryData(RSVP_STATUS_KEY, result.status),
   });
 
-  const heads = 1 + plusOnes;
+  const heads = 1 + (plusOnes ?? 0);
   const wouldWaitlist = status ? heads > status.spotsLeft : false;
 
   function handleSubmit(e: FormEvent) {
@@ -89,7 +98,7 @@ export function RsvpForm() {
       name,
       contact,
       night: night ?? undefined,
-      plusOnes,
+      plusOnes: plusOnes ?? undefined,
       agreedToFee,
     });
     if (!parsed.success) {
@@ -200,9 +209,11 @@ export function RsvpForm() {
           className="mb-1.5 block text-xs text-[var(--jp-muted)]"
         >
           Name
+          <Required />
         </label>
         <input
           id="rsvp-name"
+          aria-required
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Justin Vallejo"
@@ -220,9 +231,11 @@ export function RsvpForm() {
           className="mb-1.5 block text-xs text-[var(--jp-muted)]"
         >
           Instagram or mobile
+          <Required />
         </label>
         <input
           id="rsvp-contact"
+          aria-required
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           placeholder={`@${EVENT.hostInstagram}`}
@@ -236,6 +249,7 @@ export function RsvpForm() {
       <fieldset>
         <legend className="mb-1.5 text-xs text-[var(--jp-muted)]">
           Bringing friends? (max {EVENT.maxPlusOnes})
+          <Required />
         </legend>
         <div className="grid grid-cols-4 gap-2">
           {Array.from({ length: EVENT.maxPlusOnes + 1 }, (_, count) => {
@@ -269,12 +283,14 @@ export function RsvpForm() {
             {heads} will go to the waitlist.
           </p>
         )}
+        <FieldError id="rsvp-plus-ones-error" message={errors.plusOnes} />
       </fieldset>
 
       <fieldset>
         <legend className="mb-1.5 text-xs text-[var(--jp-muted)]">
           {EVENT.night.label} is the plan, but which night would you have
           preferred?
+          <Required />
         </legend>
         <div className="grid grid-cols-2 gap-2">
           {NIGHT_OPTIONS.map((option) => {
@@ -329,6 +345,7 @@ export function RsvpForm() {
           <span className="text-xs leading-relaxed text-[var(--jp-muted)]">
             <span className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--jp-accent-soft)]">
               Entrance fee &middot; paid by you
+              <Required />
             </span>
             <span className="block text-sm font-semibold text-[var(--jp-text)]">
               I agree to pay my own entrance fee ({EVENT.entranceFee}).

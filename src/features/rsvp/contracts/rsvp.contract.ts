@@ -18,7 +18,7 @@ export const RsvpSchema = z.object({
     .max(60, "Keep this under 60 characters."),
   night: z.enum(NIGHT_IDS, { error: "Pick the night you prefer." }),
   plusOnes: z
-    .number()
+    .number({ error: "Pick Just me or how many friends you're bringing." })
     .int()
     .min(0)
     .max(EVENT.maxPlusOnes, `You can bring up to ${EVENT.maxPlusOnes}.`),
