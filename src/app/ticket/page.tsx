@@ -4,7 +4,7 @@ import { EVENT } from "@/features/rsvp/data/event";
 import { TicketLookup } from "@/features/rsvp/components/TicketLookup";
 
 export const metadata: Metadata = {
-  title: `Your ticket · ${EVENT.name}`,
+  title: "Your ticket",
   description: `Open your ${EVENT.name} ticket once your entrance fee is paid.`,
   robots: { index: false },
 };
