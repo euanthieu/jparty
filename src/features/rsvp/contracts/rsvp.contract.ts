@@ -29,6 +29,24 @@ export const RsvpSchema = z.object({
 
 export type RsvpInput = z.infer<typeof RsvpSchema>;
 
+/** Same name and contact the guest signed up with. */
+export const TicketLookupSchema = RsvpSchema.pick({
+  name: true,
+  contact: true,
+});
+export type TicketLookup = z.infer<typeof TicketLookupSchema>;
+
+/** Only the guest who knows the name and contact sees their full name. */
+export interface Ticket {
+  name: string;
+  plusOnes: number;
+  heads: number;
+}
+
+export type TicketResult =
+  | { state: "ready"; ticket: Ticket }
+  | { state: "unpaid" | "waitlisted"; name: string };
+
 /** What the public page shows per guest — never their contact. */
 export interface GuestEntry {
   name: string;

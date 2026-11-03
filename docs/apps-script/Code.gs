@@ -18,6 +18,9 @@
  * updates the spots left on the site. Clearing a guest's Night lets them vote
  * once more by signing up again with the same name and contact.
  *
+ * Tick a guest's Paid checkbox once their entrance fee is in; from then on
+ * they can open their ticket on the site with their name and contact.
+ *
  * After pasting a new version: Deploy > Manage deployments > edit (pencil) >
  * Version: New version > Deploy. That keeps the same /exec URL.
  */
@@ -32,8 +35,17 @@ const HEADERS = [
   "Heads",
   "Status",
   "ID",
+  "Paid",
 ];
-const COL = { name: 1, contact: 2, night: 3, plusOnes: 4, heads: 5, status: 6 };
+const COL = {
+  name: 1,
+  contact: 2,
+  night: 3,
+  plusOnes: 4,
+  heads: 5,
+  status: 6,
+  paid: 8,
+};
 const NIGHTS = ["friday", "saturday"];
 
 function doPost(e) {
@@ -56,6 +68,37 @@ function doPost(e) {
 
     if (body.action === "status") {
       return json({ ok: true, status: summarize(rows, capacity) });
+    }
+
+    if (body.action === "ticket") {
+      // The contact must match too, so knowing a name isn't enough to open
+      // someone else's ticket.
+      const guest = findGuest(sheet, body.name, body.contact);
+      const contactKey = normalizeContact(body.contact);
+      if (
+        !guest ||
+        !contactKey ||
+        normalizeContact(guest.values[COL.contact]) !== contactKey
+      ) {
+        return json({ ok: false, code: "not_found" });
+      }
+      const v = guest.values;
+      const state =
+        String(v[COL.status]).toLowerCase() !== "confirmed"
+          ? "waitlisted"
+          : isPaid(v[COL.paid])
+            ? "ready"
+            : "unpaid";
+      return json({
+        ok: true,
+        state: state,
+        ticket: {
+          name: String(v[COL.name]).trim(),
+          plusOnes: Number(v[COL.plusOnes]) || 0,
+          heads: Number(v[COL.heads]) || 1,
+          night: String(v[COL.night]).toLowerCase(),
+        },
+      });
     }
 
     if (body.action === "rsvp") {
@@ -181,6 +224,14 @@ function findGuest(sheet, name, contact) {
       ? byName
       : values.findIndex((r) => normalizeContact(r[COL.contact]) === contactKey);
   return i === -1 ? null : { row: i + 2, values: values[i] };
+}
+
+/** A ticked checkbox, or "yes" / "paid" typed by hand. */
+function isPaid(value) {
+  return (
+    value === true ||
+    ["true", "yes", "paid", "y"].includes(String(value).trim().toLowerCase())
+  );
 }
 
 /** "@Juan.DC" and "juan.dc", or "0917 123 4567" and "09171234567", match. */

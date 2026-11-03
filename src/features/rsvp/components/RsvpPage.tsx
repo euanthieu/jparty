@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EVENT } from "@/features/rsvp/data/event";
 import { PhotoPanel } from "@/features/rsvp/components/PhotoPanel";
 import { RsvpForm } from "@/features/rsvp/components/RsvpForm";
@@ -117,6 +118,17 @@ export function RsvpPage() {
             </div>
 
             <GuestList />
+
+            <Link
+              href="/ticket"
+              className="mt-6 flex items-center justify-between rounded-md border border-[var(--jp-border)] px-4 py-3 text-sm text-[var(--jp-text)] transition hover:border-[rgb(var(--jp-text-rgb)/0.4)]"
+            >
+              <span>
+                <span className="font-semibold">Already paid?</span>{" "}
+                <span className="text-[var(--jp-muted)]">Get your ticket</span>
+              </span>
+              <span aria-hidden>→</span>
+            </Link>
 
             <p className="mt-6 text-xs text-[var(--jp-faint)]">
               Questions? DM{" "}
