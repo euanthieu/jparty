@@ -45,7 +45,18 @@ export interface Ticket {
 
 export type TicketResult =
   | { state: "ready"; ticket: Ticket }
-  | { state: "unpaid" | "waitlisted"; name: string };
+  | { state: "unpaid"; name: string; receiptSent: boolean }
+  | { state: "waitlisted"; name: string };
+
+/** A payment screenshot, shrunk in the browser before upload. */
+export const MAX_RECEIPT_CHARS = 3_000_000;
+export const ReceiptUploadSchema = TicketLookupSchema.extend({
+  image: z
+    .string()
+    .regex(/^data:image\/(jpeg|png|webp);base64,/, "Upload an image file.")
+    .max(MAX_RECEIPT_CHARS, "That image is too big. Try a smaller screenshot."),
+});
+export type ReceiptUpload = z.infer<typeof ReceiptUploadSchema>;
 
 /** What the public page shows per guest — never their contact. */
 export interface GuestEntry {

@@ -20,6 +20,9 @@
  *
  * Tick a guest's Paid checkbox once their entrance fee is in; from then on
  * they can open their ticket on the site with their name and contact.
+ * Guests can upload their payment screenshot on the ticket page; it is saved
+ * to the "JParty receipts" Drive folder and linked in the Receipt column.
+ * The first deploy after adding this asks for Drive permission: allow it.
  *
  * After pasting a new version: Deploy > Manage deployments > edit (pencil) >
  * Version: New version > Deploy. That keeps the same /exec URL.
@@ -36,6 +39,7 @@ const HEADERS = [
   "Status",
   "ID",
   "Paid",
+  "Receipt",
 ];
 const COL = {
   name: 1,
@@ -45,7 +49,10 @@ const COL = {
   heads: 5,
   status: 6,
   paid: 8,
+  receipt: 9,
 };
+/** Payment screenshots guests upload land here, in the script owner's Drive. */
+const RECEIPTS_FOLDER = "JParty receipts";
 const NIGHTS = ["friday", "saturday"];
 
 function doPost(e) {
@@ -70,7 +77,7 @@ function doPost(e) {
       return json({ ok: true, status: summarize(rows, capacity) });
     }
 
-    if (body.action === "ticket") {
+    if (body.action === "ticket" || body.action === "receipt") {
       // The contact must match too, so knowing a name isn't enough to open
       // someone else's ticket.
       const guest = findGuest(sheet, body.name, body.contact);
@@ -83,6 +90,26 @@ function doPost(e) {
         return json({ ok: false, code: "not_found" });
       }
       const v = guest.values;
+      if (body.action === "receipt") {
+        const match = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(
+          String(body.image || ""),
+        );
+        if (!match) return json({ ok: false, code: "bad_request" });
+        const stamp = Utilities.formatDate(
+          new Date(),
+          "Asia/Manila",
+          "MMdd-HHmm",
+        );
+        const file = receiptsFolder().createFile(
+          Utilities.newBlob(
+            Utilities.base64Decode(match[2]),
+            match[1],
+            String(v[COL.name]).trim() + " " + stamp,
+          ),
+        );
+        sheet.getRange(guest.row, COL.receipt + 1).setValue(file.getUrl());
+        return json({ ok: true, state: "received" });
+      }
       const state =
         String(v[COL.status]).toLowerCase() !== "confirmed"
           ? "waitlisted"
@@ -92,6 +119,7 @@ function doPost(e) {
       return json({
         ok: true,
         state: state,
+        receiptSent: String(v[COL.receipt]).trim() !== "",
         ticket: {
           name: String(v[COL.name]).trim(),
           plusOnes: Number(v[COL.plusOnes]) || 0,
@@ -222,8 +250,17 @@ function findGuest(sheet, name, contact) {
   const i =
     byName !== -1 || !contactKey
       ? byName
-      : values.findIndex((r) => normalizeContact(r[COL.contact]) === contactKey);
+      : values.findIndex(
+          (r) => normalizeContact(r[COL.contact]) === contactKey,
+        );
   return i === -1 ? null : { row: i + 2, values: values[i] };
+}
+
+function receiptsFolder() {
+  const found = DriveApp.getFoldersByName(RECEIPTS_FOLDER);
+  return found.hasNext()
+    ? found.next()
+    : DriveApp.createFolder(RECEIPTS_FOLDER);
 }
 
 /** A ticked checkbox, or "yes" / "paid" typed by hand. */

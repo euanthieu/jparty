@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { EVENT } from "@/features/rsvp/data/event";
+import { TicketCard } from "@/features/rsvp/components/TicketCard";
 import {
+  MAX_RECEIPT_CHARS,
   TicketLookupSchema,
-  type Ticket,
+  type ReceiptUpload as ReceiptUploadInput,
   type TicketLookup as TicketLookupInput,
   type TicketResult,
 } from "@/features/rsvp/contracts/rsvp.contract";
@@ -15,8 +17,14 @@ const IG_URL = `https://instagram.com/${EVENT.hostInstagram}`;
 const fieldClass =
   "w-full rounded-md border border-[var(--jp-border)] bg-[var(--jp-field)] px-3.5 py-3 text-base text-[var(--jp-text)] placeholder:text-[var(--jp-faint)] outline-none transition focus:border-[rgb(var(--jp-text-rgb)/0.6)] focus:ring-2 focus:ring-white/10";
 
-async function fetchTicket(input: TicketLookupInput): Promise<TicketResult> {
-  const res = await fetch("/api/ticket", {
+const buttonClass =
+  "w-full rounded-md bg-white py-3.5 font-[family-name:var(--font-lora)] text-sm font-semibold text-black shadow-[0_0_24px_rgba(255,255,255,0.18)] transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-70";
+
+/** Receipts stay readable at this size and upload quickly on mobile data. */
+const RECEIPT_MAX_SIDE = 1600;
+
+async function postJson<T>(url: string, input: unknown): Promise<T> {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -25,7 +33,30 @@ async function fetchTicket(input: TicketLookupInput): Promise<TicketResult> {
   if (!res.ok) {
     throw new Error(body?.error ?? "Something went wrong. Please try again.");
   }
-  return body as TicketResult;
+  return body as T;
+}
+
+/** Shrinks a phone screenshot to a JPEG data URL before it's uploaded. */
+async function shrinkImage(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(
+    1,
+    RECEIPT_MAX_SIDE / Math.max(bitmap.width, bitmap.height),
+  );
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Couldn't read that image. Try another one.");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const url = canvas.toDataURL("image/jpeg", 0.82);
+  if (url.length > MAX_RECEIPT_CHARS) {
+    throw new Error("That image is too big. Try a smaller screenshot.");
+  }
+  return url;
 }
 
 function IgLink() {
@@ -41,51 +72,109 @@ function IgLink() {
   );
 }
 
-/** The thing guests show at the door; staff match the name to the paid list. */
-function TicketCard({ ticket }: { ticket: Ticket }) {
-  const friends =
-    ticket.plusOnes === 0
-      ? "Just you"
-      : `You + ${ticket.plusOnes} ${ticket.plusOnes === 1 ? "friend" : "friends"}`;
+function ReceiptUpload({
+  guest,
+  name,
+  alreadySent,
+}: {
+  guest: TicketLookupInput;
+  name: string;
+  alreadySent: boolean;
+}) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [readError, setReadError] = useState<string | null>(null);
+  const mutation = useMutation({
+    mutationFn: (input: ReceiptUploadInput) =>
+      postJson<{ ok: true }>("/api/ticket/receipt", input),
+  });
+
+  async function onPick(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setReadError(null);
+    mutation.reset();
+    try {
+      setPreview(await shrinkImage(file));
+    } catch (err) {
+      setPreview(null);
+      setReadError(
+        err instanceof Error && err.message.startsWith("That")
+          ? err.message
+          : "Couldn't read that image. Try a screenshot (JPG or PNG).",
+      );
+    }
+  }
+
+  const sent = mutation.isSuccess;
+  const error = readError ?? mutation.error?.message;
   return (
-    <div className="overflow-hidden rounded-xl border border-[rgb(var(--jp-accent-rgb)/0.55)] bg-[var(--jp-field)] shadow-[0_0_40px_rgba(201,37,27,0.18)]">
-      <div className="flex items-center justify-between bg-[var(--jp-accent)] px-5 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-white">
-        <span>{EVENT.name} · Paid</span>
-        <span>Admit {ticket.heads}</span>
-      </div>
-      <div className="px-5 pb-5 pt-6">
-        <p className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--jp-faint)]">
-          Guest
+    <div
+      role="status"
+      className="space-y-4 rounded-md border border-[var(--jp-border)] bg-[rgb(var(--jp-field-rgb)/0.6)] px-4 py-4 text-sm leading-relaxed text-[var(--jp-text)]"
+    >
+      {sent ? (
+        <p>
+          Got it, {name}. Your receipt is in. Once it&apos;s checked, your
+          ticket shows up here. Come back with the same name and contact.
         </p>
-        <p className="mt-1 break-words font-[family-name:var(--font-lora)] text-3xl leading-tight text-[var(--jp-text)]">
-          {ticket.name}
+      ) : alreadySent ? (
+        <p>
+          Hi {name}, we have your receipt and it&apos;s waiting to be checked.
+          Your ticket shows up here once it is. Sent the wrong screenshot?
+          Upload a new one below.
         </p>
-        <p className="mt-1 text-sm text-[var(--jp-muted)]">{friends}</p>
-      </div>
-      <div className="border-t border-dashed border-[var(--jp-border)] px-5 py-4">
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--jp-faint)]">
-              When
-            </dt>
-            <dd className="mt-0.5 text-[var(--jp-text)]">
-              {EVENT.night.label}, {EVENT.dateOptions}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--jp-faint)]">
-              Where
-            </dt>
-            <dd className="mt-0.5 text-[var(--jp-text)]">
-              {EVENT.venue}, {EVENT.city}
-            </dd>
-          </div>
-        </dl>
-        <p className="mt-4 text-xs leading-relaxed text-[var(--jp-muted)]">
-          Show this at the door. The staff will find your name on the paid list.{" "}
-          {ticket.heads > 1 && "Come in together with your friends."}
+      ) : (
+        <p>
+          Hi {name}, your spot is held. Upload a screenshot of your entrance fee
+          payment, and your ticket shows up here once it&apos;s checked.
         </p>
-      </div>
+      )}
+
+      {!sent && (
+        <>
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[rgb(var(--jp-text-rgb)/0.35)] px-4 py-5 text-center transition hover:border-[rgb(var(--jp-text-rgb)/0.6)] focus-within:ring-2 focus-within:ring-white/20">
+            <span className="font-semibold">
+              {preview ? "Choose a different screenshot" : "Choose screenshot"}
+            </span>
+            <span className="text-xs text-[var(--jp-muted)]">
+              Your GCash or bank receipt, JPG or PNG
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onPick}
+              className="sr-only"
+            />
+          </label>
+          {preview && (
+            // eslint-disable-next-line @next/next/no-img-element -- local data URL preview
+            <img
+              src={preview}
+              alt="Your payment screenshot"
+              className="mx-auto max-h-72 rounded border border-[var(--jp-border)]"
+            />
+          )}
+          {error && (
+            <p role="alert" className="text-xs text-[var(--jp-accent-soft)]">
+              {error}
+            </p>
+          )}
+          {preview && (
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate({ ...guest, image: preview })}
+              className={buttonClass}
+            >
+              {mutation.isPending ? "Uploading…" : "Send receipt"}
+            </button>
+          )}
+        </>
+      )}
+      <p className="text-xs text-[var(--jp-muted)]">
+        Questions about your payment? DM <IgLink />.
+      </p>
     </div>
   );
 }
@@ -94,7 +183,10 @@ export function TicketLookup() {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const mutation = useMutation({ mutationFn: fetchTicket });
+  const mutation = useMutation({
+    mutationFn: (input: TicketLookupInput) =>
+      postJson<TicketResult>("/api/ticket", input),
+  });
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -112,33 +204,35 @@ export function TicketLookup() {
     return (
       <div className="space-y-4">
         <TicketCard ticket={result.ticket} />
-        <p className="text-xs text-[var(--jp-faint)]">
-          Take a screenshot so you have it even without signal.
+        <p className="text-center text-xs leading-relaxed text-[var(--jp-muted)]">
+          Screenshot this and show it at the door. The staff will find your name
+          on the paid list.
         </p>
       </div>
+    );
+  }
+
+  if (result?.state === "unpaid" && mutation.variables) {
+    return (
+      <ReceiptUpload
+        guest={mutation.variables}
+        name={result.name}
+        alreadySent={result.receiptSent}
+      />
     );
   }
 
   const error = formError ?? mutation.error?.message;
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
-      {result && (
+      {result?.state === "waitlisted" && (
         <div
           role="status"
           className="rounded-md border border-[var(--jp-border)] bg-[rgb(var(--jp-field-rgb)/0.6)] px-4 py-3.5 text-sm leading-relaxed text-[var(--jp-text)]"
         >
-          {result.state === "unpaid" ? (
-            <>
-              Hi {result.name}, your spot is held, but your entrance fee
-              isn&apos;t marked as paid yet. Once your payment is confirmed,
-              your ticket shows up here. Paid already? DM <IgLink />.
-            </>
-          ) : (
-            <>
-              Hi {result.name}, you&apos;re on the waitlist, so there&apos;s no
-              ticket yet. We&apos;ll message you if a spot opens up.
-            </>
-          )}
+          Hi {result.name}, you&apos;re on the waitlist, so there&apos;s no
+          ticket yet and nothing to pay. We&apos;ll message you if a spot opens
+          up.
         </div>
       )}
       <div>
@@ -184,9 +278,9 @@ export function TicketLookup() {
       <button
         type="submit"
         disabled={mutation.isPending}
-        className="w-full rounded-md bg-white py-3.5 font-[family-name:var(--font-lora)] text-sm font-semibold text-black shadow-[0_0_24px_rgba(255,255,255,0.18)] transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-70"
+        className={buttonClass}
       >
-        {mutation.isPending ? "Finding your ticket…" : "Show my ticket"}
+        {mutation.isPending ? "Checking…" : "Continue"}
       </button>
     </form>
   );

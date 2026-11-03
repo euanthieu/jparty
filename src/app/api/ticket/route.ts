@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
-import { EVENT } from "@/features/rsvp/data/event";
+import { callSheet } from "@/features/rsvp/api/sheet.server";
 import {
-  callSheet,
-  SheetNotConfiguredError,
-} from "@/features/rsvp/api/sheet.server";
+  guestNotFound,
+  ticketFailure,
+} from "@/features/rsvp/api/ticket.server";
 import {
   displayName,
   TicketLookupSchema,
@@ -14,32 +14,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const IG = `@${EVENT.hostInstagram}`;
-
 type SheetReply =
   | {
       ok: true;
       state: TicketResult["state"];
+      receiptSent?: boolean;
       ticket: { name: string; plusOnes: number; heads: number };
     }
   | { ok: false; code: string };
-
-function failed(err: unknown): Response {
-  const timedOut = err instanceof Error && err.name === "TimeoutError";
-  if (err instanceof SheetNotConfiguredError) {
-    console.error("[ticket] GOOGLE_SHEETS_WEBAPP_URL/SECRET not set");
-  } else {
-    console.error("[ticket] sheet request failed", err);
-  }
-  return Response.json(
-    {
-      error: timedOut
-        ? "The guest list is taking too long to respond. Please try again."
-        : `Couldn't load your ticket right now. Try again in a moment, or DM ${IG} on Instagram.`,
-    },
-    { status: timedOut ? 504 : 500 },
-  );
-}
 
 /** Looks up a guest's ticket by the name and contact they RSVP'd with. */
 export async function POST(req: NextRequest) {
@@ -55,6 +37,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const doing = "load your ticket";
   try {
     const reply = await callSheet<SheetReply>({
       action: "ticket",
@@ -63,18 +46,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (!reply.ok) {
-      if (reply.code === "not_found") {
-        return Response.json(
-          {
-            error: `We couldn't find an RSVP with that name and contact. Use the same IG or mobile you signed up with, or DM ${IG} on Instagram.`,
-          },
-          { status: 404 },
-        );
-      }
-      return failed(new Error(`sheet rejected: ${reply.code}`));
+      if (reply.code === "not_found") return guestNotFound();
+      return ticketFailure(new Error(`sheet rejected: ${reply.code}`), doing);
     }
 
     const t = reply.ticket;
+    const name = displayName(t.name);
     const result: TicketResult =
       reply.state === "ready"
         ? {
@@ -85,9 +62,11 @@ export async function POST(req: NextRequest) {
               heads: Number(t.heads) || 1,
             },
           }
-        : { state: reply.state, name: displayName(t.name) };
+        : reply.state === "unpaid"
+          ? { state: "unpaid", name, receiptSent: Boolean(reply.receiptSent) }
+          : { state: "waitlisted", name };
     return Response.json(result);
   } catch (err) {
-    return failed(err);
+    return ticketFailure(err, doing);
   }
 }

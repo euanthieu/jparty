@@ -10,6 +10,7 @@ interface Row {
   heads: number;
   status: "Confirmed" | "Waitlist";
   paid: boolean;
+  receipt?: string;
 }
 let rows: Row[] = [];
 
@@ -33,6 +34,9 @@ function fakeSheet(_url: string, init: RequestInit) {
     normalizeContact(guest.contact) !== normalizeContact(body.contact)
   ) {
     reply = { ok: false, code: "not_found" };
+  } else if (body.action === "receipt") {
+    guest.receipt = body.image;
+    reply = { ok: true, state: "received" };
   } else {
     reply = {
       ok: true,
@@ -42,6 +46,7 @@ function fakeSheet(_url: string, init: RequestInit) {
           : guest.paid
             ? "ready"
             : "unpaid",
+      receiptSent: Boolean(guest.receipt),
       ticket: {
         name: guest.name,
         plusOnes: guest.plusOnes,
@@ -59,6 +64,18 @@ async function lookup(name: string, contact: string) {
   const req = new Request("http://localhost/api/ticket", {
     method: "POST",
     body: JSON.stringify({ name, contact }),
+  });
+  return POST(req as unknown as NextRequest);
+}
+
+const RECEIPT = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+
+async function sendReceipt(name: string, contact: string, image = RECEIPT) {
+  vi.resetModules();
+  const { POST } = await import("@/app/api/ticket/receipt/route");
+  const req = new Request("http://localhost/api/ticket/receipt", {
+    method: "POST",
+    body: JSON.stringify({ name, contact, image }),
   });
   return POST(req as unknown as NextRequest);
 }
@@ -120,7 +137,11 @@ describe("POST /api/ticket", () => {
 
   it("holds the ticket back until the fee is marked paid", async () => {
     const body = await (await lookup("Chloe Navalta", "@chloenavalta")).json();
-    expect(body).toEqual({ state: "unpaid", name: "Chloe N." });
+    expect(body).toEqual({
+      state: "unpaid",
+      name: "Chloe N.",
+      receiptSent: false,
+    });
   });
 
   it("gives waitlisted guests no ticket, even if paid", async () => {
@@ -147,5 +168,29 @@ describe("POST /api/ticket", () => {
       secret: "test-secret",
       action: "ticket",
     });
+  });
+
+  it("saves an unpaid guest's receipt and reports it on the next lookup", async () => {
+    const res = await sendReceipt("Chloe Navalta", "@chloenavalta");
+    expect(res.status).toBe(201);
+    expect(rows[1].receipt).toBe(RECEIPT);
+    const body = await (await lookup("Chloe Navalta", "@chloenavalta")).json();
+    expect(body).toMatchObject({ state: "unpaid", receiptSent: true });
+  });
+
+  it("won't attach a receipt to someone else's RSVP", async () => {
+    const res = await sendReceipt("Chloe Navalta", "@someoneelse");
+    expect(res.status).toBe(404);
+    expect(rows[1].receipt).toBeUndefined();
+  });
+
+  it("only accepts images, before calling the sheet", async () => {
+    const res = await sendReceipt(
+      "Chloe Navalta",
+      "@chloenavalta",
+      "data:text/html;base64,PGgxPg==",
+    );
+    expect(res.status).toBe(400);
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

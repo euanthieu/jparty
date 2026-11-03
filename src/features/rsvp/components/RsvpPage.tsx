@@ -124,8 +124,10 @@ export function RsvpPage() {
               className="mt-6 flex items-center justify-between rounded-md border border-[var(--jp-border)] px-4 py-3 text-sm text-[var(--jp-text)] transition hover:border-[rgb(var(--jp-text-rgb)/0.4)]"
             >
               <span>
-                <span className="font-semibold">Already paid?</span>{" "}
-                <span className="text-[var(--jp-muted)]">Get your ticket</span>
+                <span className="font-semibold">Paid?</span>{" "}
+                <span className="text-[var(--jp-muted)]">
+                  Send your receipt and get your ticket
+                </span>
               </span>
               <span aria-hidden>→</span>
             </Link>
