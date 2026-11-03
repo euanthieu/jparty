@@ -18,8 +18,8 @@ const IG_URL = `https://instagram.com/${EVENT.hostInstagram}`;
 
 /** Friday is booked; this only tells Justin which night guests would have picked. */
 const NIGHT_OPTIONS: { id: NightId; label: string; dates: string }[] = [
-  { id: "friday", label: "Friday", dates: EVENT.dateOptions },
-  { id: "saturday", label: "Saturday", dates: "Jan 9 or 16" },
+  { id: "friday", label: "Friday", dates: EVENT.date },
+  { id: "saturday", label: "Saturday", dates: "Jan 9" },
 ];
 
 type FieldErrors = Partial<Record<keyof RsvpInput, string>>;
@@ -141,9 +141,8 @@ export function RsvpForm() {
             </p>
             <p className="mt-3 text-sm leading-relaxed text-[var(--jp-muted)]">
               {held === 1 ? "Your spot is" : `${held} spots are`} held for{" "}
-              {EVENT.night.label} at {EVENT.venue}, {EVENT.city} (
-              {EVENT.dateOptions}). The final date and curfew will be announced
-              soon.
+              {EVENT.longDate} at {EVENT.venue}, {EVENT.city}. The curfew will
+              be announced soon.
             </p>
           </>
         ) : (

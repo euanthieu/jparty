@@ -85,7 +85,7 @@ export function TicketCard({ ticket }: { ticket: Ticket }) {
             {friends} · Paid
           </p>
           <p className="text-[3.8cqw] tracking-[0.04em] text-white/85">
-            {EVENT.dateOptions} · {EVENT.month.split(" ").at(-1)}
+            {EVENT.date} · {EVENT.month.split(" ").at(-1)}
           </p>
         </div>
         <Cross />

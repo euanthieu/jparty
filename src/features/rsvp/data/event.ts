@@ -9,8 +9,9 @@ export const EVENT = {
   venue: "Karma",
   city: "Baguio",
   month: "January 2027",
-  /** Both Fridays; Justin hasn't picked between them yet. */
-  dateOptions: "Jan 8 or 15",
+  /** Justin picked Friday, Jan 8 over Jan 15. */
+  date: "Jan 8",
+  longDate: "Friday, January 8, 2027",
   venueInstagram: "karma_bydrunkenchef",
   /** Headcount, plus-ones included. RSVPs past this land on the waitlist. */
   capacity: 40,
